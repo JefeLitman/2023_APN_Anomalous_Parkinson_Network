@@ -1,5 +1,5 @@
-"""This file contains methods to save images and latent vectors in GANomaly models.
-Version: 1.0
+"""This file contains methods to save videos and latent vectors in GANomaly models.
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -61,15 +61,23 @@ def __make_subfolders__(folder_path, training):
 
     return normal_path, abnormal_path
 
-def __get_last_index__(folder_path):
-    """Function that return the last index of elements in the folder starting 
-    with 0 where its nothing or i where there are items. The folder must contain
-    folders named like 0001, 0002, ...
+def __get_last_item__(folder_path):
+    """Function that return the next item name of elements in the folder starting
+    with 0001. The folder must have folders named like 0001, 0002, 0010, ...
     Args:
         folder_path (String): The path where will be checked its items.
     """
     items = [int(i) for i in sorted(os.listdir(folder_path))]
-    return len(items)
+    index = len(items)
+    if index + 1 < 10:
+        item = '000' + str(index + 1)
+    elif index + 1 < 100:
+        item = '00' + str(index + 1)
+    elif index + 1 < 1000:
+        item = '0' + str(index + 1)
+    else:
+        item = str(index + 1)
+    return item
 
 def save_videos(batch_videos, batch_labels, folder_path, model_dimension, training):
     """Function to save the batch of videos in the given folder path for train or test data, 
@@ -106,16 +114,7 @@ def save_videos(batch_videos, batch_labels, folder_path, model_dimension, traini
         else:
             raise AssertionError('There is an unknow label in the data. Label found {}, expected to be 0 or 1'.format(batch_labels[i]))
 
-        index = __get_last_index__(save_path)
-        if index + 1 < 10:
-            folder = '000' + str(index + 1)
-        elif index + 1 < 100:
-            folder = '00' + str(index + 1)
-        elif index + 1 < 1000:
-            folder = '0' + str(index + 1)
-        else:
-            folder = str(index + 1)
-
+        folder = __get_last_item__(save_path)
         save_path = os.path.join(save_path, folder)
         os.mkdir(save_path)
         __save_video__(video, save_path)
@@ -143,16 +142,7 @@ def save_latent_vectors(batch_latent, batch_labels, folder_path, training):
         else:
             raise AssertionError('There is an unknow label in the data. Label found {}, expected to be 0 or 1'.format(batch_labels[i]))
 
-        index = __get_last_index__(save_path)
-        if index + 1 < 10:
-            filename = '000' + str(index + 1)
-        elif index + 1 < 100:
-            filename = '00' + str(index + 1)
-        elif index + 1 < 1000:
-            filename = '0' + str(index + 1)
-        else:
-            filename = str(index + 1)
-
+        filename = __get_last_item__(save_path)
         np.save(os.path.join(save_path, filename), vector)
 
 def generate_qq_plot(data, save_path, filename, extension=".png", normal_mean = 0, normal_std = 1):
