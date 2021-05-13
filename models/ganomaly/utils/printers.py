@@ -1,6 +1,6 @@
 """This file contains methods to print the network metrics in training 
 and inference for GANomaly models.
-Version: 1.0
+Version: 1.0.1
 Made by: Edgar Rangel
 """
 
@@ -22,7 +22,9 @@ def print_metrics(epoch, step, acc, pre, rec, spe, f1, auc, err_g=None, err_d=No
     text_to_print = "Epoch: {i} - Train Step: {j}".format(i = epoch + 1, j = step + 1)
     if err_g != None and err_d != None:
         text_to_print += "\nGenerator error: {loss_g}\nDiscriminator error: {loss_d}".format(loss_g = err_g, loss_d = err_d)
-    text_to_print += "Accuracy: {acc}\nPrecision: {pre}\nRecall: {rec}\nSpecificity: {spe}\nF1_Score: {f1}\nAUC: {auc}".format(
+    else:
+        text_to_print = "Epoch: {i} - Test Step: {j}".format(i = epoch + 1, j = step + 1)
+    text_to_print += "\nAccuracy: {acc}\nPrecision: {pre}\nRecall: {rec}\nSpecificity: {spe}\nF1_Score: {f1}\nAUC: {auc}".format(
         acc = acc,
         pre = pre,
         rec = rec,
