@@ -1,5 +1,5 @@
-"""This file contains methods to save videos and latent vectors in GANomaly models.
-Version: 1.1
+"""This file contains methods to save videos and latent vectors for all models.
+Version: 1.1.1
 Made by: Edgar Rangel
 """
 
@@ -55,9 +55,12 @@ def __make_subfolders__(folder_path, training):
     normal_path = os.path.join(root_path, "normal")
     abnormal_path = os.path.join(root_path, "abnormal")
         
-    os.mkdir(root_path)
-    os.mkdir(normal_path)
-    os.mkdir(abnormal_path)
+    if not os.path.isdir(root_path):
+        os.mkdir(root_path)
+    if not os.path.isdir(normal_path):
+        os.mkdir(normal_path)
+    if not os.path.isdir(abnormal_path):
+        os.mkdir(abnormal_path)
 
     return normal_path, abnormal_path
 
