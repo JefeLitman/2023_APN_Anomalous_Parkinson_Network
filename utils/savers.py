@@ -1,12 +1,11 @@
 """This file contains methods to save videos and latent vectors for all models.
-Version: 1.1.1
+Version: 1.1.2
 Made by: Edgar Rangel
 """
 
 import os
 import cv2
 import matplotlib.pyplot as plt
-from numpy.lib.npyio import save
 import statsmodels.api as sm
 import numpy as np
 
@@ -70,7 +69,7 @@ def __get_last_item__(folder_path):
     Args:
         folder_path (String): The path where will be checked its items.
     """
-    items = [int(i) for i in sorted(os.listdir(folder_path))]
+    items = [int(i.split(".")[0]) for i in sorted(os.listdir(folder_path))]
     index = len(items)
     if index + 1 < 10:
         item = '000' + str(index + 1)
