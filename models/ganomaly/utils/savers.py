@@ -1,5 +1,5 @@
 """This file contains methods to save the errors for GANomaly models.
-Version: 1.0
+Version: 1.0.1
 Made by: Edgar Rangel
 """
 
@@ -23,10 +23,6 @@ def __make_subfolders__(folder_path, training):
         
     if not os.path.isdir(root_path):
         os.mkdir(root_path)
-    if not os.path.isdir(normal_path):
-        os.mkdir(normal_path)
-    if not os.path.isdir(abnormal_path):
-        os.mkdir(abnormal_path)
 
     return normal_path, abnormal_path
 
