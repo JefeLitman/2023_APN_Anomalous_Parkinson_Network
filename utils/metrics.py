@@ -1,5 +1,5 @@
 """This file contains different metrics to use with the models.
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -21,6 +21,10 @@ def get_false_positives():
 def get_false_negatives():
     """Function that return tf.keras.metrics Instance for false negatives calculation."""
     return tf.keras.metrics.FalseNegatives(name="false_negatives")
+
+def get_mean():
+    """Function that return tf.keras.metrics Instance for mean calculation."""
+    return tf.keras.metrics.Mean(name="mean")
 
 def accuracy(tp, tn, fp, fn):
     """Function to calculate the accuracy obtained given the true and false positives and negatives.
