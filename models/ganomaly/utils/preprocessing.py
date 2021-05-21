@@ -1,6 +1,6 @@
 """This file contains the different methods to preprocess the data for GANomaly
 in Tensorflow.
-Version: 1.1
+Version: 1.2
 Made by: Edgar Rangel
 """
 
@@ -34,7 +34,7 @@ def min_max_scaler(data, label, new_min, new_max):
 def resize(data, label, size):
     """Function that resize a 3D tensor frame by frame or 2D tensor given a specified size.
     Args:
-        data (Tensor): A Tensor with 3 or 2 dimension to be resized.
+        data (Tensor): A Tensor with 4 or 3 dimension to be resized.
         label (Tensor): A Tensor that contains the true label for the dataset.
         size (Tuple): A Tuple with 2 elements (height, width) respectively being the new size of the frames.
     """
@@ -43,7 +43,7 @@ def resize(data, label, size):
 def get_center_of_volume(data, label, n_frames):
     """Function that get the center portion of 3D tensor (video) given the n frames.
     Args:
-        data (Tensor): A Tensor with 3 or 2 dimension to be resized.
+        data (Tensor): A Tensor with 4 dimension to be cropped with (frames, height, width, channels) shape.
         label (Tensor): A Tensor that contains the true label for the dataset.
         n_frames (Integer): An integer specifying the quantity of frames to extract from data.
     """
@@ -66,3 +66,22 @@ def delete_patient_id(data, label, patient_id):
         patient_id (Tensor): A Tensor that contains the patient id of the data.
     """
     return data, label
+
+def move_frames_to_channels(data, label):
+    """Function that move the frames axis to channels axis for 2D models and returns a tensor 
+    with (height, width, frames) shape.
+    Args:
+        data (Tensor): A Tensor with 3 dimensions to be rearranged.
+        label (Tensor): A Tensor that contains the true label for the dataset.
+    """
+    return tf.transpose(data, perm=[1,2,0]), label
+
+def rgb_to_grayscale(data, label):
+    """Function that change the data from RGB to Grayscale values in the last axis, also, removes the 
+    dimension of 1 in gray data and returns a tensor with (frames, height, width) shape.
+    Args:
+        data (Tensor): A Tensor with 4 dimensions to be transposed being the last dimension of 3 (RGB).
+        label (Tensor): A Tensor that contains the true label for the dataset.
+    """
+    gray_data = tf.image.rgb_to_grayscale(data)
+    return tf.squeeze(gray_data), label

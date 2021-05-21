@@ -1,5 +1,5 @@
 """This file contains methods to save videos and latent vectors for all models.
-Version: 1.1.2
+Version: 1.1.3
 Made by: Edgar Rangel
 """
 
@@ -158,6 +158,8 @@ def generate_qq_plot(data, save_path, filename, extension=".png", normal_mean = 
         normal_std (Decimal): The value of the standard deviation for the normal distribution.
     """
     sm.qqplot(data, loc = normal_mean, scale = normal_std)
+    ax = plt.gca()
+    plt.plot(ax.get_xlim(), ax.get_ylim(), color="r")
     plt.title("QQ Plot for {}".format(filename))
     plt.savefig(os.path.join(save_path, filename+extension))
     plt.close()
