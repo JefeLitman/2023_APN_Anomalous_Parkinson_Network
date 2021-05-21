@@ -1,5 +1,5 @@
 """This file contains methods to save the errors for GANomaly models.
-Version: 1.0.1
+Version: 1.0.2
 Made by: Edgar Rangel
 """
 
@@ -27,10 +27,10 @@ def __make_subfolders__(folder_path, training):
     return normal_path, abnormal_path
 
 def save_errors(batch_errors, batch_labels, folder_path, training):
-    """Function to save the batch of videos in the given folder path for train or test data, 
-    subdividing the normal and abnormal samples on different folders.
+    """Function to save the batch of errors in the given folder path for train or test data, 
+    subdividing the normal and abnormal samples on different files.
     Args:
-        batch_videos (Array): A 1D array with (b) shape with the errors to be saved.
+        batch_errors (Array): A 1D array with (b) shape with the errors to be saved.
         batch_labels (Array): A 1D array with (b) shape with the labels of videos.
         folder_path (String): The root path where the errors will be saved.
         training (Boolean): Select True if the videos comes from the train data or False otherwise.
