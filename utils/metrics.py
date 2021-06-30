@@ -1,5 +1,5 @@
 """This file contains different metrics to use with the models.
-Version: 1.1
+Version: 1.1.1
 Made by: Edgar Rangel
 """
 
@@ -108,7 +108,7 @@ def bartlett_test(data_x, data_y):
     return stats.bartlett(data_x, data_y).pvalue
 
 def fOneWay_test(data_x, data_y):
-    """Function that execute the F (Fisher) Test where the null hypothesis if 'x and y means are the same' 
+    """Function that execute the F (Fisher) Test where the null hypothesis is 'x and y means are the same' 
     given the x and y data and return the p-value obtained.
     Args:
         data_x (Array): An 1D array of data containing the values of x to be tested.
