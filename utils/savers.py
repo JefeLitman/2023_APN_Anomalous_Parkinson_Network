@@ -1,5 +1,5 @@
 """This file contains methods to save videos and latent vectors for all models.
-Version: 1.1.3
+Version: 1.1.4
 Made by: Edgar Rangel
 """
 
@@ -81,14 +81,15 @@ def __get_last_item__(folder_path):
         item = str(index + 1)
     return item
 
-def save_videos(batch_videos, batch_labels, folder_path, model_dimension, training):
+def save_videos(batch_videos, batch_labels, batch_ids, folder_path, model_dimension, training):
     """Function to save the batch of videos in the given folder path for train or test data, 
     subdividing the normal and abnormal samples on different folders.
     Args:
         batch_videos (Array): A 4D or 5D array with (b, h, w, f) or (b, f, h, w, c) 
         shapes respectively where b - batch size, f - frames, h - height, w - width and 
         c - channels with the videos to be saved.
-        batch_lables (Array): A 1D array with (b) shape with the labels of videos.
+        batch_labels (Array): A 1D array with (b) shape with the labels of videos.
+        batch_ids (Array): A 1D array with (b) shape with the patient id of every video.
         folder_path (String): The root path where the videos will be saved.
         model_dimension (String): Dimensionality on which the model's convolutions operate, can be "3D" or "2D".
         training (Boolean): Select True if the videos comes from the train data or False otherwise.
@@ -116,18 +117,19 @@ def save_videos(batch_videos, batch_labels, folder_path, model_dimension, traini
         else:
             raise AssertionError('There is an unknow label in the data. Label found {}, expected to be 0 or 1'.format(batch_labels[i]))
 
-        folder = __get_last_item__(save_path)
+        folder = __get_last_item__(save_path) + "_patient-{}".format(batch_ids[i])
         save_path = os.path.join(save_path, folder)
         os.mkdir(save_path)
         __save_video__(video, save_path)
 
-def save_latent_vectors(batch_latent, batch_labels, folder_path, training):
+def save_latent_vectors(batch_latent, batch_labels, batch_ids, folder_path, training):
     """Function to save the latent vectors of videos in the given folder path for train or test data, 
     subdividing the normal and abnormal samples on different folders.
     Args:
         batch_latent (Array): A 2D with (b, z) shape where b - batch size, z - context vector size
         with the latent_vectors to be saved.
-        batch_lables (Array): A 1D array with (b) shape with the labels of videos.
+        batch_labels (Array): A 1D array with (b) shape with the labels of videos.
+        batch_ids (Array): A 1D array with (b) shape with the patient id of every video.
         folder_path (String): The root path where the latent vectors will be saved.
         training (Boolean): Select True if the videos comes from the train data or False otherwise.
     """
@@ -144,7 +146,7 @@ def save_latent_vectors(batch_latent, batch_labels, folder_path, training):
         else:
             raise AssertionError('There is an unknow label in the data. Label found {}, expected to be 0 or 1'.format(batch_labels[i]))
 
-        filename = __get_last_item__(save_path)
+        filename = __get_last_item__(save_path) + "_patient-{}".format(batch_ids[i])
         np.save(os.path.join(save_path, filename), vector)
 
 def generate_qq_plot(data, save_path, filename, extension=".png", normal_mean = 0, normal_std = 1):
