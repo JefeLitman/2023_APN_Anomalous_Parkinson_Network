@@ -1,5 +1,5 @@
 """This file contains methods to save videos and latent vectors for all models.
-Version: 1.1.4
+Version: 1.1.5
 Made by: Edgar Rangel
 """
 
@@ -69,7 +69,7 @@ def __get_last_item__(folder_path):
     Args:
         folder_path (String): The path where will be checked its items.
     """
-    items = [int(i.split(".")[0]) for i in sorted(os.listdir(folder_path))]
+    items = [i.split(".")[0] for i in sorted(os.listdir(folder_path))]
     index = len(items)
     if index + 1 < 10:
         item = '000' + str(index + 1)
