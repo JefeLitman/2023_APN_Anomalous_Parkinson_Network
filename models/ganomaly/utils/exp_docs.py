@@ -1,5 +1,5 @@
 """This file contains the experiment documentation functions for GANomaly nets.
-Version: 1.0.3
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -74,7 +74,7 @@ def get_outputs_path(experiment_path):
     output_path = os.path.join(experiment_path, "outputs")
     os.mkdir(output_path)
     paths = [
-        {"folder":"latent_vectors", "subfolders": ["in", "out"]}, 
+        {"folder":"latent_vectors", "subfolders": ["input_generator", "output_generator", "input_discriminator", "output_discriminator"]}, 
         {"folder":"samples", "subfolders":["real", "fake", "substraction"]},
         {"folder":"errors", "subfolders":["adversarial", "contextual", "encoder"]},
         {"folder": "graphics", "subfolders":["quantitative", "qualitative", "visuals"]}
