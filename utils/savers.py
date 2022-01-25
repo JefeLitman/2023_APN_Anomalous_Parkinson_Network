@@ -1,5 +1,5 @@
 """This file contains methods to save videos and latent vectors for all models.
-Version: 1.1.5
+Version: 1.1.6
 Made by: Edgar Rangel
 """
 
@@ -163,5 +163,5 @@ def generate_qq_plot(data, save_path, filename, extension=".png", normal_mean = 
     ax = plt.gca()
     plt.plot(ax.get_xlim(), ax.get_ylim(), color="r")
     plt.title("QQ Plot for {}".format(filename))
-    plt.savefig(os.path.join(save_path, filename+extension))
+    plt.savefig(os.path.join(save_path, filename+extension), dpi=300)
     plt.close()
