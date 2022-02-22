@@ -1,11 +1,11 @@
-"""This file contains the different methods to get the encoding dictionaries
-for tfrecords datasets used in the notebooks.
-Version: 1.0
+"""This file contains the different get methods for the encoding dictionaries
+of tfrecords datasets used. The method must be named "get_<model>" e.g. get_ganomaly
+Version: 1.1
 Made by: Edgar Rangel
 """
 import tensorflow as tf
 
-def get_parkinson():
+def get_ganomaly():
     """Function to get the encoding dictionary for Parkinson cutted frames and 
     total frames dataset."""
     encoding_dictionary = {
