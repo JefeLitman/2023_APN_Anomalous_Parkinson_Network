@@ -1,6 +1,6 @@
 """This file contains the different methods to preprocess the data for GANomaly
 in Tensorflow.
-Version: 1.3
+Version: 1.4
 Made by: Edgar Rangel
 """
 
@@ -86,3 +86,27 @@ def rgb_to_grayscale(data, label, reduce_gray_dimension, patient_id):
         return tf.squeeze(gray_data), label, patient_id
     else:
         return gray_data, label, patient_id
+
+def repeat_and_identify_frames(data, label, patient_id):
+    """This function repeat the label and patient_id the quantity of frames data contains and
+    returns them with a new attribute being the frame_id.
+    Args:
+        data (Tensor): A Tensor with 4 dimensions to be unbatched.
+        label (Tensor): A Tensor that contains the true label for the dataset.
+        patient_id (Tensor): A Tensor that contains the patient id of the data.
+    """
+    labels = tf.repeat(label, [tf.shape(data)[0]], axis=0)
+    ids = tf.repeat(patient_id, [tf.shape(data)[0]], axis=0)
+    frames_id = tf.range(1, tf.shape(data)[0] + 1)
+    return data, labels, ids, frames_id
+
+def add_video_id(i, xyif):
+    """Function that revert the enumerate method applied over a tf.data.Dataset but it adds the
+    parameter of video id to the data.
+    Args:
+        i (Integer): An integer with the index of the data in the Dataset instance.
+        xyif (Tuple): A Tuple of Tensor instances that contains the data, true label, patiend id 
+        and frame id respectively.
+    """
+    video_id = tf.repeat(i + 1, [tf.shape(xyif[0])[0]], axis=0)
+    return xyif[0], xyif[1], xyif[2], xyif[3], video_id
