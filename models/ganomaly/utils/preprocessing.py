@@ -1,6 +1,6 @@
 """This file contains the different methods to preprocess the data for GANomaly
 in Tensorflow.
-Version: 1.4
+Version: 1.4.1
 Made by: Edgar Rangel
 """
 
@@ -97,7 +97,7 @@ def repeat_and_identify_frames(data, label, patient_id):
     """
     labels = tf.repeat(label, [tf.shape(data)[0]], axis=0)
     ids = tf.repeat(patient_id, [tf.shape(data)[0]], axis=0)
-    frames_id = tf.range(1, tf.shape(data)[0] + 1)
+    frames_id = tf.range(1, tf.shape(data)[0] + 1, 1, tf.int64)
     return data, labels, ids, frames_id
 
 def add_video_id(i, xyif):
