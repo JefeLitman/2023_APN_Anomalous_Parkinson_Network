@@ -1,5 +1,5 @@
 """This file contains methods to save the errors for GANomaly models.
-Version: 1.1
+Version: 1.1.1
 Made by: Edgar Rangel
 """
 
@@ -33,13 +33,13 @@ def __format_number__(index):
         index (Int): Integer to be formatted.
     """
     if index + 1 < 10:
-        return '000' + str(index + 1)
+        return '000' + str(index)
     elif index + 1 < 100:
-        return '00' + str(index + 1)
+        return '00' + str(index)
     elif index + 1 < 1000:
-        return '0' + str(index + 1)
+        return '0' + str(index)
     else:
-        return str(index + 1)
+        return str(index)
 
 def save_errors(batch_errors, batch_labels, folder_path, training):
     """Function to save the batch of errors in the given folder path for train or test data, 
@@ -126,6 +126,9 @@ def save_frames(batch_frames, batch_labels, batch_ids, batch_video_id, batch_fra
         else:
             raise AssertionError("The video is not in RGB or gray scale to be saved.")
 
-        frame_converted = cv2.cvtColor(frame, convert)
-        filename = __format_number__(batch_frame_id) + ".png"
+        if convert:
+            frame_converted = cv2.cvtColor(frame, convert)
+        else:
+            frame_converted = frame
+        filename = __format_number__(batch_frame_id[i]) + ".png"
         cv2.imwrite(os.path.join(save_path, filename), frame_converted)
