@@ -1,5 +1,5 @@
 """This file contains methods to save the errors for GANomaly models.
-Version: 1.1.1
+Version: 1.1.2
 Made by: Edgar Rangel
 """
 
@@ -32,11 +32,11 @@ def __format_number__(index):
     Args:
         index (Int): Integer to be formatted.
     """
-    if index + 1 < 10:
+    if index < 10:
         return '000' + str(index)
-    elif index + 1 < 100:
+    elif index < 100:
         return '00' + str(index)
-    elif index + 1 < 1000:
+    elif index < 1000:
         return '0' + str(index)
     else:
         return str(index)
