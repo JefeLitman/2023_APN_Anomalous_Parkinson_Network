@@ -1,6 +1,6 @@
 """This file contain the options for differents experiments and parameters
 required by each model of Anomalous Parkinson Gait research.
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -19,6 +19,7 @@ def get_parsed_parameters():
     parser.add_argument('--lr', type=float, help='learning rate for the model in learning', default=1e-3)
     parser.add_argument('--dataset_path', type=str, default='', help='Absolute path where the tfrecord is')
     parser.add_argument('--model', type=str, default='ganomaly', help='Name of the model to use. It must be equal to folder name in models. e.g. ganomaly')
+    parser.add_argument('--variant', type=str, default='model_base', help='Name of the model variant to use. It must be equal to file names in folder models of scripts. e.g. model_3d')
     parser.add_argument('--batch_size', type=int, default=16, help='input batch size')
     parser.add_argument('--epochs', type=int, default=500, help='quantity of epochs to do in training')
     parser.add_argument('--val_4_epoch', type=int, default=1, help='calculate metrics after training each epoch: 1 | 0')
