@@ -1,4 +1,4 @@
-"""This file contains the different methods to preprocess the data for GANomaly
+"""This file contains the different methods to process the data for GANomaly
 in Tensorflow.
 Version: 1.4.1
 Made by: Edgar Rangel

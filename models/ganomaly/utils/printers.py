@@ -1,12 +1,10 @@
-"""This file contains methods to print the network metrics in training 
-and inference for GANomaly models.
-Version: 1.0.1
+"""This file contains methods to print the network metrics in training and inference for GANomaly models.
+Version: 1.0.2
 Made by: Edgar Rangel
 """
 
 def print_metrics(epoch, step, acc, pre, rec, spe, f1, auc, err_g=None, err_d=None):
-    """Function to print the values given in the parameters to show the status of 
-    training or inference process for the model.
+    """Function to print the values given in the parameters to show the status of training or inference process for the model.
     Args:
         epoch (Integer): The epoch number.
         step (Integer): The step number in the epoch.
@@ -33,3 +31,4 @@ def print_metrics(epoch, step, acc, pre, rec, spe, f1, auc, err_g=None, err_d=No
         auc = auc
     )
     print(text_to_print)
+    return text_to_print
