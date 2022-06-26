@@ -1,15 +1,16 @@
-"""This file contains methods to save videos and latent vectors for all models.
-Version: 1.1.6
+"""This file contains methods to save videos, latent vectors and errors for all models.
+Version: 1.2
 Made by: Edgar Rangel
 """
 
 import os
 import cv2
-import matplotlib.pyplot as plt
-import statsmodels.api as sm
 import numpy as np
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+from .common import format_index, get_train_test_paths
 
-def __save_video__(video, folder_path):
+def save_video(video, folder_path):
     """Function that save a video frame by frame in the folder path given.
     Args:
         video (Array): a 4D array with (f, h, w, c) shape where f - frames, 
@@ -27,127 +28,54 @@ def __save_video__(video, folder_path):
     for i, frame in enumerate(video):
         if convert:
             frame = cv2.cvtColor(frame, convert)
-
-        if i + 1 < 10:
-            filename = '000' + str(i + 1) + ".png"
-        elif i + 1 < 100:
-            filename = '00' + str(i + 1) + ".png"
-        elif i + 1 < 1000:
-            filename = '0' + str(i + 1) + ".png"
-        else:
-            filename = str(i + 1) + ".png"
-
+        filename = format_index(i + 1) + ".png"
         cv2.imwrite(os.path.join(folder_path, filename), frame)
 
-def __make_subfolders__(folder_path, training):
-    """Function that create the respectively subfolders to save the train/test normal 
-    and abnormal videos or vectors and returns the normal and abnormal folder paths.
+def save_latent_vector(embedding_vector, folder_path, filename):
+    """Function to save the given embedded vector as npy in the desired folder with an specific name. It doesn't return anything.
     Args:
-        folder_path (String): The root path where the videos will be saved.
+        embedding_vector (Array): A numpy array with one dimension and shape (z) containing its elements to be saved.
+        folder_path (String): The root path where the latent vector will be saved.
+        filename (String): The name that will have the element to be saved.
+    """
+    assert embedding_vector.ndim == 1
+    np.save(os.path.join(folder_path, filename), embedding_vector)
+
+def save_errors(batch_errors, batch_labels, folder_path, training):
+    """Function to save the batch of errors in the given folder path for train or test data, subdividing the normal and abnormal samples on different files.
+    Args:
+        batch_errors (Array): A 1D array with 1 dimension (shape of [batch]) with the errors to be saved.
+        batch_labels (Array): A 1D array with shape with the labels of videos.
+        folder_path (String): The root path where the errors will be saved.
         training (Boolean): Select True if the videos comes from the train data or False otherwise.
     """
-    if training:
-        root_path = os.path.join(folder_path, "train")
+    assert batch_labels.shape[0] == batch_errors.shape[0]
+
+    normal_path, abnormal_path = get_train_test_paths(folder_path, training)
+
+    if os.path.isfile(normal_path+".npy"):
+        normal_errors = np.load(normal_path+".npy")
     else:
-        root_path = os.path.join(folder_path, "test")
+        normal_errors = np.r_[[]]
 
-    normal_path = os.path.join(root_path, "normal")
-    abnormal_path = os.path.join(root_path, "abnormal")
-        
-    if not os.path.isdir(root_path):
-        os.mkdir(root_path)
-    if not os.path.isdir(normal_path):
-        os.mkdir(normal_path)
-    if not os.path.isdir(abnormal_path):
-        os.mkdir(abnormal_path)
-
-    return normal_path, abnormal_path
-
-def __get_last_item__(folder_path):
-    """Function that return the next item name of elements in the folder starting
-    with 0001. The folder must have folders named like 0001, 0002, 0010, ...
-    Args:
-        folder_path (String): The path where will be checked its items.
-    """
-    items = [i.split(".")[0] for i in sorted(os.listdir(folder_path))]
-    index = len(items)
-    if index + 1 < 10:
-        item = '000' + str(index + 1)
-    elif index + 1 < 100:
-        item = '00' + str(index + 1)
-    elif index + 1 < 1000:
-        item = '0' + str(index + 1)
+    if os.path.isfile(abnormal_path+".npy"):
+        abnormal_errors = np.load(abnormal_path+".npy")
     else:
-        item = str(index + 1)
-    return item
+        abnormal_errors = np.r_[[]]
 
-def save_videos(batch_videos, batch_labels, batch_ids, folder_path, model_dimension, training):
-    """Function to save the batch of videos in the given folder path for train or test data, 
-    subdividing the normal and abnormal samples on different folders.
-    Args:
-        batch_videos (Array): A 4D or 5D array with (b, h, w, f) or (b, f, h, w, c) 
-        shapes respectively where b - batch size, f - frames, h - height, w - width and 
-        c - channels with the videos to be saved.
-        batch_labels (Array): A 1D array with (b) shape with the labels of videos.
-        batch_ids (Array): A 1D array with (b) shape with the patient id of every video.
-        folder_path (String): The root path where the videos will be saved.
-        model_dimension (String): Dimensionality on which the model's convolutions operate, can be "3D" or "2D".
-        training (Boolean): Select True if the videos comes from the train data or False otherwise.
-    """
-    assert batch_labels.shape[0] == batch_videos.shape[0]
-    assert model_dimension in ["2D", "3D"]
-    if model_dimension == "2D":
-        if batch_videos.ndim == 4:
-            batch_videos = np.expand_dims(np.moveaxis(batch_videos, 3, 1), -1)
-        else:
-            raise AssertionError('The quantity of dimension for batch_videos must be 4 in model dimension "2D".')
-    elif model_dimension == "3D":
-        if batch_videos.ndim == 5:
-            pass
-        else:
-            raise AssertionError('The quantity of dimension for batch_videos must be 5 in model dimension "3D".')
-            
-    normal_path, abnormal_path = __make_subfolders__(folder_path, training)
-
-    for i, video in enumerate(batch_videos):
-        if batch_labels[i] == 0:
-            save_path =  normal_path
-        elif batch_labels[i] == 1:
-            save_path = abnormal_path
+    for i, label in enumerate(batch_labels):
+        if label == 0:
+            normal_errors = np.concatenate([normal_errors, [batch_errors[i]]])
+        elif label == 1:
+            abnormal_errors = np.concatenate([abnormal_errors, [batch_errors[i]]])
         else:
             raise AssertionError('There is an unknow label in the data. Label found {}, expected to be 0 or 1'.format(batch_labels[i]))
 
-        folder = __get_last_item__(save_path) + "_patient-{}".format(batch_ids[i])
-        save_path = os.path.join(save_path, folder)
-        os.mkdir(save_path)
-        __save_video__(video, save_path)
+    if normal_errors.shape[0] != 0:
+        np.save(normal_path, normal_errors)
 
-def save_latent_vectors(batch_latent, batch_labels, batch_ids, folder_path, training):
-    """Function to save the latent vectors of videos in the given folder path for train or test data, 
-    subdividing the normal and abnormal samples on different folders.
-    Args:
-        batch_latent (Array): A 2D with (b, z) shape where b - batch size, z - context vector size
-        with the latent_vectors to be saved.
-        batch_labels (Array): A 1D array with (b) shape with the labels of videos.
-        batch_ids (Array): A 1D array with (b) shape with the patient id of every video.
-        folder_path (String): The root path where the latent vectors will be saved.
-        training (Boolean): Select True if the videos comes from the train data or False otherwise.
-    """
-    assert batch_labels.shape[0] == batch_latent.shape[0]
-    assert batch_latent.ndim == 2
-
-    normal_path, abnormal_path = __make_subfolders__(folder_path, training)
-
-    for i, vector in enumerate(batch_latent):
-        if batch_labels[i] == 0:
-            save_path =  normal_path
-        elif batch_labels[i] == 1:
-            save_path = abnormal_path
-        else:
-            raise AssertionError('There is an unknow label in the data. Label found {}, expected to be 0 or 1'.format(batch_labels[i]))
-
-        filename = __get_last_item__(save_path) + "_patient-{}".format(batch_ids[i])
-        np.save(os.path.join(save_path, filename), vector)
+    if abnormal_errors.shape[0] != 0:
+        np.save(abnormal_path, abnormal_errors)
 
 def generate_qq_plot(data, save_path, filename, extension=".png", normal_mean = 0, normal_std = 1):
     """Function that generate and save a qq-plot to visualize if the data follows a normal distribution.
