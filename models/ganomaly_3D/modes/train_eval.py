@@ -1,16 +1,19 @@
 """This file contains the loop for train and eval mode for GANomaly 3D model.
-Version: 0.1
+Version: 1.0
 Made by: Edgar Rangel
 """
 
 import os
+import gc
 import random
 import numpy as np
 import tensorflow as tf
 from ..model import get_model
+from ..utils.printers import get_metrics
 from ..hiperparameters import get_options
-from ..utils.savers import save_models
+from ..utils.weights_init import reinit_model
 from ..utils.steps import train_step, test_step
+from ..utils.savers import save_models, save_model_results
 from ..utils.exp_docs import experiment_folder_path, get_metrics_path, get_outputs_path, save_readme
 
 def exec_loop(readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, train_data, test_data, normal_class):
@@ -62,8 +65,8 @@ def exec_loop(readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, 
     for epoch in range(opts["epochs"]):
 
         # Save the models every 1000 epochs
-        if epoch + 1 % 1000 == 0 or epoch + 1 == opts["epochs"]:
-            save_models(gen_model, disc_model, experiment_path, outputs_path, epoch)
+        if epoch % 1000 == 0 or epoch + 1 == opts["epochs"]:
+            save_models(gen_model, disc_model, experiment_path, epoch)
 
         for step, xyi in enumerate(train_data):
             err_g, err_d, fake_images, latent_i, latent_o, feat_real, feat_fake = train_step(xyi[0], opts["w_gen"])
@@ -71,73 +74,16 @@ def exec_loop(readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, 
             if err_d < 1e-5 or tf.abs(err_d - disc_loss.result().numpy()) < 1e-5:
                 reinit_model(disc_model)
 
-            anomaly_scores = tf.math.reduce_mean(tf.math.pow(tf.squeeze(latent_i-latent_o), 2), axis=1)
-            anomaly_scores = (anomaly_scores - tf.reduce_min(anomaly_scores)) / (
-                tf.reduce_max(anomaly_scores) - tf.reduce_min(anomaly_scores)
-            )
-            if normal_class == 1:
-                anomaly_scores = 1 - anomaly_scores
+            acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, normal_class, latent_i, latent_o, TP, TN, FP, FN, AUC, err_g, err_d)
 
-            TP.update_state(xyi[1], anomaly_scores)
-            TN.update_state(xyi[1], anomaly_scores)
-            FP.update_state(xyi[1], anomaly_scores)
-            FN.update_state(xyi[1], anomaly_scores)
-            AUC.update_state(xyi[1], anomaly_scores)
             gen_loss.update_state(err_g)
             disc_loss.update_state(err_d)
-            acc = accuracy(TP.result().numpy(), TN.result().numpy(), FP.result().numpy(), FN.result().numpy())
-            pre = precision(TP.result().numpy(), FP.result().numpy())
-            rec = recall(TP.result().numpy(), FN.result().numpy())
-            spe = specificity(TN.result().numpy(), FP.result().numpy())
-            f1 = f1_score(TP.result().numpy(), FP.result().numpy(), FN.result().numpy())
-            auc = AUC.result().numpy()
             gen_error = gen_loss.result().numpy()
             disc_error = disc_loss.result().numpy()
 
-            clear_output(wait=True)
-            print_metrics(epoch, step, acc, pre, rec, spe, f1, auc, err_g, err_d)
-
             # Save the latent vectors, videos and errors in the last epoch and every 500 epochs
-            if epoch + 1 == epochs or epoch % 1000 == 0:
-                save_latent_vectors(tf.squeeze(latent_i).numpy(), xyi[1].numpy(), xyi[2].numpy(), outputs_path[0], True)
-                save_latent_vectors(tf.squeeze(latent_o).numpy(), xyi[1].numpy(), xyi[2].numpy(),  outputs_path[1], True)
-                save_latent_vectors(tf.reshape(feat_real, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), outputs_path[2], True)
-                save_latent_vectors(tf.reshape(feat_fake, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(),  outputs_path[3], True)
-
-                batch_frames = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in xyi[0]]]
-                save_frames(
-                    batch_frames, 
-                    xyi[1].numpy(), 
-                    xyi[2].numpy(), 
-                    xyi[4].numpy(), 
-                    xyi[3].numpy(), 
-                    outputs_path[4],
-                    True
-                )
-                batch_frames = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in fake_images]]
-                save_frames(
-                    batch_frames, 
-                    xyi[1].numpy(), 
-                    xyi[2].numpy(), 
-                    xyi[4].numpy(), 
-                    xyi[3].numpy(), 
-                    outputs_path[5],
-                    True
-                )
-                batch_frames = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in tf.abs(xyi[0] - fake_images)]]
-                save_frames(
-                    batch_frames, 
-                    xyi[1].numpy(), 
-                    xyi[2].numpy(), 
-                    xyi[4].numpy(), 
-                    xyi[3].numpy(), 
-                    outputs_path[6],
-                    True
-                )
-
-                save_errors(l2_loss_batch(feat_real, feat_fake), xyi[1].numpy(), outputs_path[7], True)
-                save_errors(l1_loss_batch(xyi[0], fake_images), xyi[1].numpy(), outputs_path[8], True)
-                save_errors(l2_loss_batch(latent_i, latent_o), xyi[1].numpy(), outputs_path[9], True)
+            if epoch % 1000 == 0 or epoch + 1 == opts["epochs"]:
+                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, True)
 
         # Save train metrics
         train_metrics_csv.write("{e},{loss_g},{loss_d},{acc},{pre},{rec},{spe},{f1},{auc}\n".format(
@@ -171,69 +117,11 @@ def exec_loop(readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, 
         for step, xyi in enumerate(test_data):
             fake_images, latent_i, latent_o, feat_real, feat_fake = test_step(xyi[0])
 
-            anomaly_scores = tf.math.reduce_mean(tf.math.pow(tf.squeeze(latent_i-latent_o), 2), axis=1)
-            anomaly_scores = (anomaly_scores - tf.reduce_min(anomaly_scores)) / (
-                tf.reduce_max(anomaly_scores) - tf.reduce_min(anomaly_scores)
-            )
-            if normal_class == 1:
-                anomaly_scores = 1 - anomaly_scores
-
-            TP.update_state(xyi[1], anomaly_scores)
-            TN.update_state(xyi[1], anomaly_scores)
-            FP.update_state(xyi[1], anomaly_scores)
-            FN.update_state(xyi[1], anomaly_scores)
-            AUC.update_state(xyi[1], anomaly_scores)
-            acc = accuracy(TP.result().numpy(), TN.result().numpy(), FP.result().numpy(), FN.result().numpy())
-            pre = precision(TP.result().numpy(), FP.result().numpy())
-            rec = recall(TP.result().numpy(), FN.result().numpy())
-            spe = specificity(TN.result().numpy(), FP.result().numpy())
-            f1 = f1_score(TP.result().numpy(), FP.result().numpy(), FN.result().numpy())
-            auc = AUC.result().numpy()
-
-            clear_output(wait=True)
-            print_metrics(epoch, step, acc, pre, rec, spe, f1, auc)
+            acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, normal_class, latent_i, latent_o, TP, TN, FP, FN, AUC)
 
             # Save the latent vectors, videos and errors in the last epoch and every 500 epochs
-            if epoch + 1 == epochs or epoch % 1000 == 0:
-                save_latent_vectors(tf.squeeze(latent_i).numpy(), xyi[1].numpy(), xyi[2].numpy(), outputs_path[0], False)
-                save_latent_vectors(tf.squeeze(latent_o).numpy(), xyi[1].numpy(), xyi[2].numpy(), outputs_path[1], False)
-                save_latent_vectors(tf.reshape(feat_real, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), outputs_path[2], False)
-                save_latent_vectors(tf.reshape(feat_fake, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), outputs_path[3], False)
-
-                batch_frames = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in xyi[0]]]
-                save_frames(
-                    batch_frames, 
-                    xyi[1].numpy(), 
-                    xyi[2].numpy(), 
-                    xyi[4].numpy(), 
-                    xyi[3].numpy(), 
-                    outputs_path[4],
-                    False
-                )
-                batch_frames = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in fake_images]]
-                save_frames(
-                    batch_frames, 
-                    xyi[1].numpy(), 
-                    xyi[2].numpy(), 
-                    xyi[4].numpy(), 
-                    xyi[3].numpy(), 
-                    outputs_path[5],
-                    False
-                )
-                batch_frames = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in tf.abs(xyi[0] - fake_images)]]
-                save_frames(
-                    batch_frames, 
-                    xyi[1].numpy(), 
-                    xyi[2].numpy(), 
-                    xyi[4].numpy(), 
-                    xyi[3].numpy(), 
-                    outputs_path[6],
-                    False
-                )
-
-                save_errors(l2_loss_batch(feat_real, feat_fake), xyi[1].numpy(), outputs_path[7], False)
-                save_errors(l1_loss_batch(xyi[0], fake_images), xyi[1].numpy(), outputs_path[8], False)
-                save_errors(l2_loss_batch(latent_i, latent_o), xyi[1].numpy(), outputs_path[9], False)
+            if epoch % 1000 == 0 or epoch + 1 == opts["epochs"]:
+                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, False)
 
         # Save test metrics
         test_metrics_csv.write("{e},{acc},{pre},{rec},{spe},{f1},{auc}\n".format(
@@ -255,13 +143,7 @@ def exec_loop(readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, 
     test_metrics_csv.close()
     
     ######################### Save final models ###############################
-    for i in sorted(os.listdir(experiment_path)):
-        if "gen_model" in i:
-            os.remove(os.path.join(experiment_path, i))
-        elif "disc_model" in i:
-            os.remove(os.path.join(experiment_path, i))
-    gen_model.save(os.path.join(experiment_path,"gen_model.h5"), include_optimizer=False, save_format='h5')
-    disc_model.save(os.path.join(experiment_path,"disc_model.h5"), include_optimizer=False, save_format='h5')
+    save_models(gen_model, disc_model, experiment_path)
     
     ######################### Deleting the used model ###############################
     del gen_model
