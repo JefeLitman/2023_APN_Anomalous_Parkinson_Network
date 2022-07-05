@@ -1,10 +1,14 @@
 """This file contains methods to save elements for GANomaly 3D model.
-Version: 1.2
+Version: 1.2.1
 Made by: Edgar Rangel
 """
 
 import os
-from ....utils.savers import save_video, save_latent_vector
+import numpy as np
+import tensorflow as tf
+from .processing import min_max_scaler
+from .losses import l1_loss_batch, l2_loss_batch
+from ....utils.savers import save_video, save_latent_vector, save_errors
 from ....utils.common import format_index, get_train_test_paths, get_next_last_item
 
 def save_videos(batch_videos, batch_labels, batch_ids, batch_videos_ids, folder_path, training):
@@ -80,13 +84,12 @@ def save_latent_vectors(batch_latents, batch_labels, batch_ids, batch_videos_ids
         save_latent_vector(vector, save_path, filename)
 
 
-def save_models(gen_model, disc_model, experiment_path, outputs_path, epoch = ""):
-    """This function take the GANomaly 3D models and save them in the path given. Also it remove the previous models in the path together with the related outputs stored in outputs_folders to avoid saving a lot of innecessary files.
+def save_models(gen_model, disc_model, experiment_path, epoch = ""):
+    """This function take the GANomaly 3D models and save them in the path given. Also it remove the previous models in the path to avoid saving a lot of innecessary files.
     Args:
         gen_model (Keras Model Instance): An instance of tf.keras.Model of the generator model to be saved.
         disc_model (Keras Model Instance): An instance of tf.keras.Model of the discriminator model to be saved.
         experiment_path (String): A string with the folder path in where the models will be saved.
-        outputs_path (List[Str]): A list with the paths in which the model stores elements such as latent vectors, errors and videos.
         epoch (Integer): An optional integer indicating in which epoch the model reach while is training.
     """
     for i in sorted(os.listdir(experiment_path)):
@@ -103,7 +106,33 @@ def save_models(gen_model, disc_model, experiment_path, outputs_path, epoch = ""
     disc_model.save(os.path.join(experiment_path,"disc_model{}.h5".format(to_add)), 
         include_optimizer=False, save_format='h5')
 
+def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, training):
+    """This function take the given args (xyi, fake_images, latent_i, latent_o, feat_real, feat_fake) and save them in the outputs paths given for their own reason. This method doesn't return anything but save all the outputs for the model.
+    Args:
+        xyi (Tuple[Tensor]): A tuple with (videos, labels, patient_ids, videos_ids) elements in that respective order.
+        fake_images (Tensor): A tensor with the generated videos by the model.
+        latent_i (Tensor): A tensor with the latent vector Zg of the model.
+        latent_o (Tensor): A tensor with the latent vector Z'g of the model.
+        feat_real (Tensor): A tensor with the latent vector Zd of the model.
+        feat_fake (Tensor): A tensor with the latent vector Z'd of the model.
+        outputs_path (List[Str]): A list with the paths in which the model stores elements such as latent vectors, errors and videos.
+        training (Boolean): Select True if the videos comes from the train data or False otherwise.
+    """
     for path in outputs_path:
         os.system("rm -rf {}".format(os.path.join(path, "*")))
 
-def save_model_results():
+    save_latent_vectors(tf.squeeze(latent_i).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[0], training)
+    save_latent_vectors(tf.squeeze(latent_o).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[1], training)
+    save_latent_vectors(tf.reshape(feat_real, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[2], training)
+    save_latent_vectors(tf.reshape(feat_fake, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[3], training)
+
+    batch_videos = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in xyi[0]]].astype(np.uint8)
+    save_videos(batch_videos, xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[4], training)
+    batch_videos = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in fake_images]].astype(np.uint8)
+    save_videos(batch_videos, xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[5], training)
+    batch_videos = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in tf.abs(xyi[0] - fake_images)]].astype(np.uint8)
+    save_videos(batch_videos, xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[6], training)
+
+    save_errors(l2_loss_batch(feat_real, feat_fake).numpy(), xyi[1].numpy(), outputs_path[7], training)
+    save_errors(l1_loss_batch(xyi[0], fake_images).numpy(), xyi[1].numpy(), outputs_path[8], training)
+    save_errors(l2_loss_batch(latent_i, latent_o).numpy(), xyi[1].numpy(), outputs_path[9], training)
