@@ -1,22 +1,27 @@
 """This file contains all the process to do the data preprocessing for GANomaly 3D model. You must modify this file in order to change the preprocessing developed here.
-Version: 1.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
 import tensorflow as tf
 from .utils.processing import resize, oversampling_equidistant_full, rgb_to_grayscale, normalize_accros_channels, min_max_scaler, add_video_id
 
-def preprocess_gait_dataset(raw_data, opts, normal_class, frames, rgb_2_bw, normal_patients_ids, abnormal_patients_ids):
+def preprocess_gait_dataset(raw_data, opts, normal_patients_ids, abnormal_patients_ids):
     """Function that develop all the preprocessing necessary over the tfrecord for gait_v2. It returns two elements in the following order: a list with the normal patients instances of tf.data.Dataset and another for abnormal data.
     Args:
         raw_data (tf.data.Dataset): An instance of tf.data.Dataset object which contain all the data and must return for each sample a video, label and patient_id in that order.
         opts (Dict): Dictionary that contains all the hiperparameters for the model, generally is the import of hiperparameters.py file of the model.
-        frames (Integer): An integer specifying the quantity of frames will the data have.
-        rgb_2_bw (Boolean): True if you want to convert RGB videos to Black and White, otherwise False.
-        normal_class (Integer): An integer indicating which class will be the normal class, if control (0) or parkinson (1) patients.
         normal_patients_ids (List[Int]): A list or array of integers indicating which patients are from control population.
         abnormal_patients_ids (List[Int]): A list or array of integers indicating which patients are from parkinson population.
     """
+    if opts["nc"] == 1:
+        rgb_2_bw = True
+    elif opts["nc"] == 3:
+        rgb_2_bw = False
+    else:
+        raise AssertionError('The only possible channel number allowed are RGB (3) or Black & White (1) in the preprocessing of GANomaly 3D Model')
+
+    normal_class = opts["normal_class"]
     if normal_class == 0:
         abnormal_class = 1
     elif normal_class == 1:
