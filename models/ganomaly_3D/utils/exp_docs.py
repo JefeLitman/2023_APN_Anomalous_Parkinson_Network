@@ -1,10 +1,9 @@
 """This file contains the experiment documentation functions for GANomaly 3D model.
-Version: 1.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
 import os
-from ..hiperparameters import get_options
 from ....utils.common import format_index, get_next_last_item
 
 def experiment_folder_path(base_path, isize, nc):
@@ -60,15 +59,15 @@ def get_outputs_path(experiment_path):
 
     return final_paths
 
-def save_readme(save_path, helptext_template, experiment_id, kfold):
+def save_readme(save_path, opts, helptext_template, experiment_id, kfold):
     """This function format and complete the elements in the helptext template. This template must contain the variables listed in this function to be filled. Otherwise will throw an error and the method doesn't return anything.
     Args:
         save_path (String): A string in with the folder path where it will be saved.
+        opts (Dict): Dictionary that contains all the hiperparameters for the model, generally is the import of hiperparameters.py file of the model.
         helptext_template (String): A string containing the help text which will be saved along the experiment elements.
         experiment_id (String): A string with the format xxxx containing an unique number to identify the experiment.
         kfold (Integer): An integer indicating in which kfold the loop is executed.
     """
-    opts = get_options()
     with open(os.path.join(save_path, "README.txt"), "w+") as readme:
         readme.write(helptext_template.format(
             i = experiment_id,
