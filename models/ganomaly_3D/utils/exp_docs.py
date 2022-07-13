@@ -1,10 +1,10 @@
 """This file contains the experiment documentation functions for GANomaly 3D model.
-Version: 1.3
+Version: 1.3.1
 Made by: Edgar Rangel
 """
 
 import os
-from ....utils.common import format_index, get_next_last_item
+from utils.common import format_index, get_next_last_item
 
 def experiment_folder_path(base_path, isize, nc):
     """Function that generate the experiment folder given the base path and return the experiment folder path and experiment id.
