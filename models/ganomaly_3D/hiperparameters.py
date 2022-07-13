@@ -1,5 +1,5 @@
 """This file contains all the hiperparameters for GANomaly 3D model. You can modify this file in order to change default values stablished here.
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -24,7 +24,6 @@ def get_options():
         w_adv = 1, # Adversarial loss weight
         w_con = 50, # Contextual loss weight
         w_enc = 1, # Encoder loss weight
-        w_gen = (1, 50, 1), # Tuple with 3 elements (weight_adv, weight_con, weight_enc) to use in the error of generator
         beta_1 = 0.5, # Momentum of beta 1 in adam optimizer for generator and discriminator
         beta_2 = 0.999 # Momentum of beta 2 in adam optimizer for generator and discriminator
     )
