@@ -1,12 +1,12 @@
 """This file contains methods to print into a log file with the calculation of metrics in training and eval for GANomaly 3D model.
-Version: 1.2
+Version: 1.2.1
 Made by: Edgar Rangel
 """
 
 import os
 from .losses import l2_loss_batch
 from .processing import min_max_scaler
-from ....utils.metrics import accuracy, precision, recall, specificity, f1_score
+from utils.metrics import accuracy, precision, recall, specificity, f1_score
 
 def get_metrics(epoch, step, experiment_path, xyi, normal_class, latent_i, latent_o, TP, TN, FP, FN, AUC, err_g=None, err_d=None):
     """This function calculate and save in the log file path the status and performance of the network while doing training or evaluation. This method return a tuple with the model metrics in the following order.
