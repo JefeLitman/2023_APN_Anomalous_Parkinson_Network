@@ -1,5 +1,5 @@
 """This file contains the experiment documentation functions for GANomaly 3D model.
-Version: 1.3.1
+Version: 1.3.2
 Made by: Edgar Rangel
 """
 
@@ -75,7 +75,7 @@ def save_readme(save_path, opts, helptext_template, experiment_id, kfold):
             batch = opts["batch_size"],
             lr = opts["lr"],
             beta_1 = opts["beta_1"],
-            beta_2 = opts["beta_2s"],
+            beta_2 = opts["beta_2"],
             epochs = opts["epochs"],
             nz = opts["nz"],
             nc = opts["nc"],
