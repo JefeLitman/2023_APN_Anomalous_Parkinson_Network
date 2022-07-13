@@ -1,5 +1,5 @@
 """This file contains the loop for train and eval mode for GANomaly 3D model.
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -10,15 +10,15 @@ import numpy as np
 import tensorflow as tf
 from ..model import get_model
 from ..utils.printers import get_metrics
-from ..hiperparameters import get_options
 from ..utils.weights_init import reinit_model
 from ..utils.steps import train_step, test_step
 from ..utils.savers import save_models, save_model_results
 from ..utils.exp_docs import experiment_folder_path, get_metrics_path, get_outputs_path, save_readme
 
-def exec_loop(readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, train_data, test_data, normal_class):
+def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, train_data, test_data, normal_class):
     """This function execute the loop for training and evaluation in each epoch for GANomaly 3D model. It doesn't return anything but it will be showing the results obtained in each epoch.
     Args:
+        opts (Dict): Dictionary that contains all the hiperparameters for the model, generally is the import of hiperparameters.py file of the model.
         readme_template (String): A string containing the help text which will be saved along the experiment elements.
         kfold (Integer): An integer indicating in which kfold the loop is executed.
         TP (tf.keras.metrics): An instance of tf.keras.metrics.TruePositives which will work to calculate basic metrics.
@@ -32,8 +32,6 @@ def exec_loop(readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, 
         test_data (tf.data.Dataset): An instance of tf.data.Dataset containing the test data for the model.
         normal_class (Integer): An integer indicating which class will be the normal class, if control (0) or parkinson (1) patients.
     """
-    opts = get_options()
-
     random.seed(opts["seed"])
     np.random.seed(opts["seed"])
     tf.random.set_seed(opts["seed"])
