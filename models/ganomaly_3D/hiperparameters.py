@@ -1,5 +1,5 @@
 """This file contains all the hiperparameters for GANomaly 3D model. You can modify this file in order to change default values stablished here.
-Version: 1.1
+Version: 1.2
 Made by: Edgar Rangel
 """
 
@@ -11,6 +11,7 @@ def get_options():
         n_cpus = 16, # Number of CPU cores to use while running
         lr = 0.0002, # Learning rate
         dataset_path = "./datasets/gait_v2/gait_v2.tfrecord", # Absolute path where the tfrecord is located to be used
+        normal_class = 0, # Class label that will be the normal data in the training process
         kfolds = 5, # Number of kfolds in which the model will be evaluated with the tfrecord
         batch_size = 16, # Input batch size
         epochs = 20000, # Quantity of epochs to do in training
