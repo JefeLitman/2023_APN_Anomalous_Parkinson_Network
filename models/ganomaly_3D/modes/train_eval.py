@@ -1,5 +1,5 @@
 """This file contains the loop for train and eval mode for GANomaly 3D model.
-Version: 1.1.1
+Version: 1.1.2
 Made by: Edgar Rangel
 """
 
@@ -39,7 +39,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
     metric_save_path = get_metrics_path(experiment_path)
     outputs_path = get_outputs_path(experiment_path)
 
-    save_readme(experiment_path, readme_template, experiment_id, kfold)
+    save_readme(experiment_path, opts, readme_template, experiment_id, kfold)
 
     TP.reset_states()
     TN.reset_states()
