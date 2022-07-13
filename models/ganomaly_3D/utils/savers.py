@@ -1,5 +1,5 @@
 """This file contains methods to save elements for GANomaly 3D model.
-Version: 1.2.1
+Version: 1.2.2
 Made by: Edgar Rangel
 """
 
@@ -8,8 +8,8 @@ import numpy as np
 import tensorflow as tf
 from .processing import min_max_scaler
 from .losses import l1_loss_batch, l2_loss_batch
-from ....utils.savers import save_video, save_latent_vector, save_errors
-from ....utils.common import format_index, get_train_test_paths, get_next_last_item
+from utils.savers import save_video, save_latent_vector, save_errors
+from utils.common import format_index, get_train_test_paths, get_next_last_item
 
 def save_videos(batch_videos, batch_labels, batch_ids, batch_videos_ids, folder_path, training):
     """Function to save the batch of videos in the given folder path for train or test data, subdividing the normal and abnormal samples on different folders.
