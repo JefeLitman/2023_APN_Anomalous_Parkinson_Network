@@ -1,5 +1,5 @@
 """This file contains the loop for train mode for GANomaly 3D model.
-Version: 1.0.1
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -15,7 +15,7 @@ from ..utils.weights_init import reinit_model
 from ..utils.savers import save_models, save_model_results
 from ..utils.exp_docs import experiment_folder_path, get_metrics_path, get_outputs_path, save_readme
 
-def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, train_data):
+def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, train_data, test_data):
     """This function execute the loop for training of each epoch for GANomaly 3D model. It doesn't return anything but it will be showing the results obtained in each epoch.
     Args:
         opts (Dict): Dictionary that contains all the hiperparameters for the model, generally is the import of hiperparameters.py file of the model.
@@ -29,6 +29,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
         gen_loss (tf.keras.metrics): An instance of tf.keras.metrics.Mean which will work to calculate basic metrics.
         disc_loss (tf.keras.metrics): An instance of tf.keras.metrics.Mean which will work to calculate basic metrics.
         train_data (tf.data.Dataset): An instance of tf.data.Dataset containing the train data for the model.
+        test_data (tf.data.Dataset): An instance of tf.data.Dataset containing the test data for the model but in this mode is not necessary and is only as param for compatibility.
     """
     random.seed(opts["seed"])
     np.random.seed(opts["seed"])
@@ -62,7 +63,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
             save_models(gen_model, disc_model, experiment_path, epoch)
 
         for step, xyi in enumerate(train_data):
-            err_g, err_d, fake_images, latent_i, latent_o, feat_real, feat_fake = train_step(xyi[0], opts["w_gen"])
+            err_g, err_d, fake_images, latent_i, latent_o, feat_real, feat_fake = train_step(gen_model, gen_opt, disc_model, disc_opt, xyi[0], opts["w_gen"])
 
             if err_d < 1e-5 or tf.abs(err_d - disc_loss.result().numpy()) < 1e-5:
                 reinit_model(disc_model)
