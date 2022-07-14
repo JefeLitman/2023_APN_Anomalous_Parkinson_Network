@@ -1,5 +1,5 @@
 """This file contains the loop for train and eval mode for GANomaly 3D model.
-Version: 1.1.2
+Version: 1.2
 Made by: Edgar Rangel
 """
 
@@ -66,7 +66,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
             save_models(gen_model, disc_model, experiment_path, epoch)
 
         for step, xyi in enumerate(train_data):
-            err_g, err_d, fake_images, latent_i, latent_o, feat_real, feat_fake = train_step(xyi[0], opts["w_gen"])
+            err_g, err_d, fake_images, latent_i, latent_o, feat_real, feat_fake = train_step(gen_model, gen_opt, disc_model, disc_opt, xyi[0], opts["w_gen"])
 
             if err_d < 1e-5 or tf.abs(err_d - disc_loss.result().numpy()) < 1e-5:
                 reinit_model(disc_model)
@@ -112,7 +112,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
         del feat_fake
 
         for step, xyi in enumerate(test_data):
-            fake_images, latent_i, latent_o, feat_real, feat_fake = test_step(xyi[0])
+            fake_images, latent_i, latent_o, feat_real, feat_fake = test_step(gen_model, disc_model, xyi[0])
 
             acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC)
 
