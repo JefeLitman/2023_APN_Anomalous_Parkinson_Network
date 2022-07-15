@@ -1,5 +1,5 @@
 """This file contain the method that execute the selected mode to run the GANomaly 3D model. This file contain specifically the joint of preprocessing, model modes (execution loops) and results obtained. Its important that the scripts files never import any function or method outside the mandatory method called run.
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -9,7 +9,7 @@ def run(mode):
         mode (String): A string with the exact names (without .py) of files inside the folder modes in the different models, e.g. "train_eval".
     """
     print("Starting Ganomaly 3D model execution...\nLoading hiperparameters...")
-    from ..models.ganomaly_3D.hiperparameters import get_options
+    from models.ganomaly_3D.hiperparameters import get_options
     opts = get_options()
 
     print("Hiperparameters loaded!\nSetting th GPU to be used...")
@@ -74,7 +74,7 @@ def run(mode):
     print("Abnormal patients ids: {}".format(abnormal_patients_ids))
     
     print("Separation done!\nSetting data preprocessing pipeline...")
-    normal_patients, abnormal_data = preprocess_gait_dataset(
+    normal_patients, abnormal_patients = preprocess_gait_dataset(
         total_data, 
         opts,
         normal_patients_ids,
@@ -130,30 +130,55 @@ Training process:
     kf = KFold(n_splits=kfolds, shuffle=True, random_state=seed)
     train_folds = []
     test_folds = []
-    counter = 1
-    for train_indexes, test_indexes in kf.split(normal_patients):
-        print("Kfold {}\n\tTrain ids: {}\n\tTest ids: {}".format(
-            counter,
-            [normal_patients_ids[i] for i in train_indexes],
-            [normal_patients_ids[i] for i in test_indexes]
-        ))
-        counter +=1
+    test_totals = [0] * kfolds
+    for k, (train_indexes, test_indexes) in enumerate(kf.split(normal_patients)):
         data = normal_patients[train_indexes[0]]
         total_samples = videos_4_pat[normal_patients_ids[train_indexes[0]]]
         for i in range(1, len(train_indexes)):
             data = data.concatenate(normal_patients[train_indexes[i]])
             total_samples += videos_4_pat[normal_patients_ids[train_indexes[i]]]
-        train_folds.append(data.shuffle(total_samples, reshuffle_each_iteration=True).batch(opts['batch_size']).prefetch(-1))
+        train_folds.append(
+            data.shuffle(
+                total_samples, 
+                reshuffle_each_iteration=True
+            ).batch(
+                opts['batch_size']
+            ).prefetch(-1)
+        )
             
         data = normal_patients[test_indexes[0]]
-        total_samples = videos_4_pat[normal_patients_ids[test_indexes[0]]]
+        test_totals[k] += videos_4_pat[normal_patients_ids[test_indexes[0]]]
         for i in range(1, len(test_indexes)):
             data = data.concatenate(normal_patients[test_indexes[i]])
-            total_samples += videos_4_pat[normal_patients_ids[test_indexes[i]]]
-        data = data.concatenate(abnormal_data)
-        for i in abnormal_patients_ids:
-            total_samples += videos_4_pat[i]
-        test_folds.append(data.shuffle(total_samples, reshuffle_each_iteration=True).batch(opts['batch_size']).prefetch(-1))
+            test_totals[k] += videos_4_pat[normal_patients_ids[test_indexes[i]]]
+        test_folds.append(data)
+
+        print("Kfold {}\n\tNormal train ids: {}\n\tNormal test ids: {}".format(
+            k + 1,
+            [normal_patients_ids[i] for i in train_indexes],
+            [normal_patients_ids[i] for i in test_indexes]
+        ))
+    
+    for k , (_, test_indexes) in enumerate(kf.split(abnormal_patients)):
+        data = abnormal_patients[test_indexes[0]]
+        test_totals[k] += videos_4_pat[abnormal_patients_ids[test_indexes[0]]]
+        for i in range(1, len(test_indexes)):
+            data = data.concatenate(abnormal_patients[test_indexes[i]])
+            test_totals[k] += videos_4_pat[abnormal_patients_ids[test_indexes[i]]]
+        test_folds[k] = test_folds[k].concatenate(
+            data
+        ).shuffle(
+            test_totals[k], 
+            reshuffle_each_iteration=True
+        ).batch(
+            opts['batch_size']
+        ).prefetch(-1)
+
+        print("Kfold {}\n\tAbnormal test ids: {}".format(
+            k + 1,
+            [abnormal_patients_ids[i] for i in test_indexes]
+        ))
+        
 
     print("Kfolds calculated!\nCreating metrics for the model...")
     TP = get_true_positives()
@@ -166,19 +191,36 @@ Training process:
 
     print("Metrics created!\nStarting model execution...")
     for k in range(opts['kfolds']):
-        locals()[mode](
-            opts,
-            readme_template,
-            k,
-            TP,
-            TN,
-            FP,
-            FN,
-            AUC,
-            gen_loss,
-            disc_loss,
-            train_folds[k],
-            test_folds[k]
-        )
+        if mode == "train_eval":
+            train_eval(
+                opts,
+                readme_template,
+                k + 1,
+                TP,
+                TN,
+                FP,
+                FN,
+                AUC,
+                gen_loss,
+                disc_loss,
+                train_folds[k],
+                test_folds[k]
+            )
+        elif mode == "train":
+            train(
+                opts,
+                readme_template,
+                k + 1,
+                TP,
+                TN,
+                FP,
+                FN,
+                AUC,
+                gen_loss,
+                disc_loss,
+                train_folds[k]
+            )
+        else:
+            raise AssertionError('The mode {} is not available for the Ganomaly 3D modes.'.format(mode))
 
     print("Model finished!\nEnd of the report.")
