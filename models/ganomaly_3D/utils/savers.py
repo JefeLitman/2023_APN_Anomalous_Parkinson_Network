@@ -1,5 +1,5 @@
 """This file contains methods to save elements for GANomaly 3D model.
-Version: 1.2.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
@@ -106,7 +106,7 @@ def save_models(gen_model, disc_model, experiment_path, epoch = ""):
     disc_model.save(os.path.join(experiment_path,"disc_model{}.h5".format(to_add)), 
         include_optimizer=False, save_format='h5')
 
-def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, training):
+def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, training, clean_old):
     """This function take the given args (xyi, fake_images, latent_i, latent_o, feat_real, feat_fake) and save them in the outputs paths given for their own reason. This method doesn't return anything but save all the outputs for the model.
     Args:
         xyi (Tuple[Tensor]): A tuple with (videos, labels, patient_ids, videos_ids) elements in that respective order.
@@ -117,9 +117,11 @@ def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fak
         feat_fake (Tensor): A tensor with the latent vector Z'd of the model.
         outputs_path (List[Str]): A list with the paths in which the model stores elements such as latent vectors, errors and videos.
         training (Boolean): Select True if the videos comes from the train data or False otherwise.
+        clean_old (Boolean): Select True if you want to delete all the content in outputs folder or False otherwise.
     """
-    for path in outputs_path:
-        os.system("rm -rf {}".format(os.path.join(path, "*")))
+    if clean_old:
+        for path in outputs_path:
+            os.system("rm -rf {}".format(os.path.join(path, "*")))
 
     save_latent_vectors(tf.squeeze(latent_i).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[0], training)
     save_latent_vectors(tf.squeeze(latent_o).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[1], training)
