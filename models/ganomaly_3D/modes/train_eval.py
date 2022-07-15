@@ -1,5 +1,5 @@
 """This file contains the loop for train and eval mode for GANomaly 3D model.
-Version: 1.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
@@ -80,7 +80,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
 
             # Save the latent vectors, videos and errors in the last epoch and every 500 epochs
             if epoch % 1000 == 0 or epoch + 1 == opts["epochs"]:
-                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, True)
+                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, True, step == 0)
 
         # Save train metrics
         train_metrics_csv.write("{e},{loss_g},{loss_d},{acc},{pre},{rec},{spe},{f1},{auc}\n".format(
@@ -118,7 +118,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
 
             # Save the latent vectors, videos and errors in the last epoch and every 500 epochs
             if epoch % 1000 == 0 or epoch + 1 == opts["epochs"]:
-                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, False)
+                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, False, step == 0)
 
         # Save test metrics
         test_metrics_csv.write("{e},{acc},{pre},{rec},{spe},{f1},{auc}\n".format(
