@@ -1,5 +1,5 @@
 """This file contains all the process to do the data preprocessing for GANomaly 3D model. You must modify this file in order to change the preprocessing developed here.
-Version: 1.3
+Version: 1.4
 Made by: Edgar Rangel
 """
 
@@ -78,7 +78,4 @@ def preprocess_gait_dataset(raw_data, opts, normal_patients_ids, abnormal_patien
 
         abnormal_patients.append(data)
 
-    abnormal_data = abnormal_patients[0]
-    for i in range(1, len(abnormal_patients)):
-        abnormal_data = abnormal_data.concatenate(abnormal_patients[i])
-    return normal_patients, abnormal_data
+    return normal_patients, abnormal_patients
