@@ -1,5 +1,5 @@
 """This file contains all the hiperparameters for GANomaly 3D model. You can modify this file in order to change default values stablished here.
-Version: 1.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
@@ -11,12 +11,14 @@ def get_options():
         n_cpus = 16, # Number of CPU cores to use while running
         lr = 0.0002, # Learning rate
         dataset_path = "./datasets/gait_v2/gait_v2.tfrecord", # Absolute path where the tfrecord is located to be used
-        normal_class = 0, # Class label that will be the normal data in the training process
+        normal_class = 1, # Class label that will be the normal data in the training process
         kfolds = 5, # Number of kfolds in which the model will be evaluated with the tfrecord
         batch_size = 16, # Input batch size
         epochs = 20000, # Quantity of epochs to do in training
         seed = 8128, # Seed used to enable the replicability of the experiment
         save_path = "./results", # Path where the experiments will be saved
+        gen_model_path = "./results", # Path where the generator model is allocated and will be loaded to run trained models
+        disc_model_path = "./results", # Path where the discriminator model is allocated and will be loaded to run trained models
         isize = 64, # Input size of the videos, e.g. 64 equals to videos with shape 64x64x64
         nc = 1, # Quantity of channels in the data
         nz = 100, # Context vector size
