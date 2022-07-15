@@ -1,5 +1,5 @@
 """This file contains methods to print into a log file with the calculation of metrics in training and eval for GANomaly 3D model.
-Version: 1.2.1
+Version: 1.3
 Made by: Edgar Rangel
 """
 
@@ -60,5 +60,6 @@ def get_metrics(epoch, step, experiment_path, xyi, normal_class, latent_i, laten
         line = '='*30
     )
     print(text_to_print)
-    os.system("echo {} >> {}".format(text_to_print, os.path.join(experiment_path, log_name)))
+    with open(os.path.join(experiment_path, log_name), 'a+') as f:
+        print(text_to_print, file=f)
     return (acc, pre, rec, spe, f1, auc)
