@@ -1,5 +1,5 @@
 """This file contains the loop for train mode for GANomaly 3D model.
-Version: 1.1
+Version: 1.2
 Made by: Edgar Rangel
 """
 
@@ -15,7 +15,7 @@ from ..utils.weights_init import reinit_model
 from ..utils.savers import save_models, save_model_results
 from ..utils.exp_docs import experiment_folder_path, get_metrics_path, get_outputs_path, save_readme
 
-def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, train_data, test_data):
+def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, train_data):
     """This function execute the loop for training of each epoch for GANomaly 3D model. It doesn't return anything but it will be showing the results obtained in each epoch.
     Args:
         opts (Dict): Dictionary that contains all the hiperparameters for the model, generally is the import of hiperparameters.py file of the model.
@@ -29,7 +29,6 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
         gen_loss (tf.keras.metrics): An instance of tf.keras.metrics.Mean which will work to calculate basic metrics.
         disc_loss (tf.keras.metrics): An instance of tf.keras.metrics.Mean which will work to calculate basic metrics.
         train_data (tf.data.Dataset): An instance of tf.data.Dataset containing the train data for the model.
-        test_data (tf.data.Dataset): An instance of tf.data.Dataset containing the test data for the model but in this mode is not necessary and is only as param for compatibility.
     """
     random.seed(opts["seed"])
     np.random.seed(opts["seed"])
@@ -39,7 +38,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
     metric_save_path = get_metrics_path(experiment_path)
     outputs_path = get_outputs_path(experiment_path)
 
-    save_readme(experiment_path, readme_template, experiment_id, kfold)
+    save_readme(experiment_path, opts, readme_template, experiment_id, kfold)
 
     TP.reset_states()
     TN.reset_states()
@@ -77,7 +76,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
 
             # Save the latent vectors, videos and errors in the last epoch and every 500 epochs
             if epoch % 1000 == 0 or epoch + 1 == opts["epochs"]:
-                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, True)
+                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, True, step == 0)
 
         # Save train metrics
         train_metrics_csv.write("{e},{loss_g},{loss_d},{acc},{pre},{rec},{spe},{f1},{auc}\n".format(
