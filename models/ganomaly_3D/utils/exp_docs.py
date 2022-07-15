@@ -1,5 +1,5 @@
 """This file contains the experiment documentation functions for GANomaly 3D model.
-Version: 1.3.2
+Version: 1.3.3
 Made by: Edgar Rangel
 """
 
@@ -70,7 +70,7 @@ def save_readme(save_path, opts, helptext_template, experiment_id, kfold):
     """
     with open(os.path.join(save_path, "README.txt"), "w+") as readme:
         readme.write(helptext_template.format(
-            i = experiment_id,
+            i = format_index(experiment_id),
             seed = opts["seed"],
             batch = opts["batch_size"],
             lr = opts["lr"],
