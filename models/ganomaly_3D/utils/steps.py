@@ -1,12 +1,11 @@
 """This file contains the different steps (training and testing) for GANomaly 3D model.
-Version: 1.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
 import tensorflow as tf
 from .losses import l1_loss, l2_loss, BCELoss
 
-@tf.function
 def train_step(gen_model, gen_opt, disc_model, disc_opt, x_data, w_gen = (1, 50, 1)):
     """Function that make one train step for whole GANomaly 3D model and returns the errors and relevant output variables.
     Args:
@@ -41,7 +40,6 @@ def train_step(gen_model, gen_opt, disc_model, disc_opt, x_data, w_gen = (1, 50,
 
     return err_g, err_d, fake, latent_i, latent_o, feat_real, feat_fake
 
-@tf.function
 def test_step(gen_model, disc_model, x_data):
     """Function that make one inference or eval step for whole GANomaly 3D model and returns its outputs to evaluate them.
     Args:
