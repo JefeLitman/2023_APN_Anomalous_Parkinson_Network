@@ -1,6 +1,6 @@
 """This file contains the method to obtain GANomaly model.
 https://arxiv.org/abs/1805.06725
-Version: 1.1
+Version: 1.1.1
 Made by: Edgar Rangel
 """
 
@@ -20,7 +20,7 @@ def get_model(isize, nz, nc, ngf, extra_layers):
         generator_model: A tf.keras.Model instance.
         discriminator_model: A tf.keras.Model instance.
     """
-    input_size = [isize]*3 + [nc]
+    input_size = [isize]*2 + [nc]
 
     input_generator = tf.keras.Input(shape=input_size, name="Input-generator")
     gen_imag, latent_i, latent_o = get_generator(input_generator, isize, nz, nc, ngf, extra_layers)
