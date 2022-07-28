@@ -1,5 +1,5 @@
 """This file contain the method that execute the selected mode to run the GANomaly 3D model. This file contain specifically the joint of preprocessing, model modes (execution loops) and results obtained. Its important that the scripts files never import any function or method outside the mandatory method called run.
-Version: 1.1
+Version: 1.1.1
 Made by: Edgar Rangel
 """
 
@@ -112,6 +112,7 @@ Transformations applied to data (following this order):
 - Convert: We convert the videos in RGB to Grayscale.
 - Normalize: We normalize the volume with mean and std of 0.5 for both.
 - Scale: We scale the data between -1 and 1 using min max scaler to be comparable with generated images.
+- Identify: We identify each video per patient with an integer value.
 - Randomize: We randomize the order of samples in every epoch.
 
 Training process:
