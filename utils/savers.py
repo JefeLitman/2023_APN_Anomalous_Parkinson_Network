@@ -1,5 +1,5 @@
 """This file contains methods to save videos, latent vectors and errors for all models.
-Version: 1.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
@@ -10,26 +10,36 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from .common import format_index, get_train_test_paths
 
+def save_frame(frame, frame_index, folder_path):
+    """Function that save a frame in the folder path given.
+    Args:
+        frame (Array): a 3D array with (h, w, c) shape where: h - height, w - width and c - channels with the video to be saved.
+        frame_index (Integer): Number indicating the sequence of the frame that will be saved.
+        folder_path (String): The root path where the video will be saved.
+    """
+    assert frame.ndim == 3
+    if frame.shape[-1] == 1:
+        convert = None
+    elif frame.shape[-1] == 3:
+        convert = cv2.COLOR_RGB2BGR
+    else:
+        raise AssertionError("The frame is not in RGB or gray scale to be saved.")
+
+    if convert:
+        frame = cv2.cvtColor(frame, convert)
+    filename = format_index(frame_index) + ".png"
+    cv2.imwrite(os.path.join(folder_path, filename), frame)
+
 def save_video(video, folder_path):
     """Function that save a video frame by frame in the folder path given.
     Args:
-        video (Array): a 4D array with (f, h, w, c) shape where f - frames, 
-        h - height, w - width and c - channels with the video to be saved.
+        video (Array): a 4D array with (f, h, w, c) shape where f - frames, h - height, w - width and c - channels with the video to be saved.
         folder_path (String): The root path where the video will be saved.
     """
     assert video.ndim == 4
-    if video.shape[-1] == 1:
-        convert = None
-    elif video.shape[-1] == 3:
-        convert = cv2.COLOR_RGB2BGR
-    else:
-        raise AssertionError("The video is not in RGB or gray scale to be saved.")
 
     for i, frame in enumerate(video):
-        if convert:
-            frame = cv2.cvtColor(frame, convert)
-        filename = format_index(i + 1) + ".png"
-        cv2.imwrite(os.path.join(folder_path, filename), frame)
+        save_frame(frame, i + 1, folder_path)
 
 def save_latent_vector(embedding_vector, folder_path, filename):
     """Function to save the given embedded vector as npy in the desired folder with an specific name. It doesn't return anything.
