@@ -1,53 +1,27 @@
-"""This file contains the experiment documentation functions for GANomaly nets.
-Version: 1.1
+"""This file contains the experiment documentation functions for GANomaly model.
+https://arxiv.org/abs/1805.06725
+Version: 1.2
 Made by: Edgar Rangel
 """
 
 import os
+from utils.common import format_index, get_next_last_item
 
-def experiment_folder_path(base_path, model_dimension, isize, nc):
-    """Function that generate the experiment folder given the base path and return the experiment 
-    folder path and experiment id.
+def experiment_folder_path(base_path, isize, nc):
+    """Function that generate the experiment folder given the base path and return the experiment folder path and experiment id.
     Args:
         base_path (String): The folder path that will contains several experiments on it organized by id.
-        model_dimension (String): Dimensionality on which the model's convolutions operate, can be "3D" or "2D".
         isize (Integer): Input size of the models.
         nc (Integer): Quantity of channels of models input.
     """
-    assert model_dimension in ["2D", "3D"]
-
-    experiment_id = 1
-    experiments = sorted(os.listdir(base_path))
-    if len(experiments) == 0:
-        experiment_id = '000' + str(experiment_id)
-    else:
-        experiment_id = int(experiments[-1].split("_")[0]) + 1
-        if experiment_id < 10:
-            experiment_id = '000' + str(experiment_id)
-        elif experiment_id < 100:
-            experiment_id = '00' + str(experiment_id)
-        elif experiment_id < 1000:
-            experiment_id = '0' + str(experiment_id)
-        else:
-            experiment_id = str(experiment_id)
-
+    experiment_id = get_next_last_item(base_path)
     experiment_path = os.path.join(base_path,
-        "{id}_Ganomaly_{d}-".format(
-            id = experiment_id,
-            d = model_dimension
+        "{id}_Ganomaly-{h}x{h}x{c}".format(
+            id = format_index(experiment_id),
+            h = isize,
+            c = nc
         )
     )
-
-    if model_dimension == "2D":
-        experiment_path += "{h}x{h}x{c}".format(
-            h = isize,
-            c = nc
-        )
-    else:
-        experiment_path += "{h}x{h}x{h}x{c}".format(
-            h = isize,
-            c = nc
-        )
     
     if not os.path.isdir(experiment_path):
         os.mkdir(experiment_path)
@@ -55,8 +29,7 @@ def experiment_folder_path(base_path, model_dimension, isize, nc):
     return experiment_path, experiment_id
     
 def get_metrics_path(experiment_path):
-    """Function that generate the metrics experiment folder given the experiment path and return 
-    the metrics folder path.
+    """Function that generate the metrics experiment folder given the experiment path and return the metrics folder path.
     Args:
         experiment_path (String): The folder path of the experiment.
     """
@@ -65,9 +38,7 @@ def get_metrics_path(experiment_path):
     return metric_save_path
 
 def get_outputs_path(experiment_path):
-    """Function that generate the outputs experiment folder given the experiment path and return 
-    a vector with the folders path for input latent vectors, output latent vectors, real samples 
-    and fake samples generated respectively in that order.
+    """Function that generate the outputs experiment folder given the experiment path and return a vector with the folders path for input latent vectors, output latent vectors, real samples and fake samples generated respectively in that order.
     Args:
         experiment_path (String): The folder path of the experiment.
     """
@@ -88,3 +59,30 @@ def get_outputs_path(experiment_path):
             final_paths.append(final_path)
 
     return final_paths
+
+def save_readme(save_path, opts, helptext_template, experiment_id, kfold):
+    """This function format and complete the elements in the helptext template. This template must contain the variables listed in this function to be filled. Otherwise will throw an error and the method doesn't return anything.
+    Args:
+        save_path (String): A string in with the folder path where it will be saved.
+        opts (Dict): Dictionary that contains all the hiperparameters for the model, generally is the import of hiperparameters.py file of the model.
+        helptext_template (String): A string containing the help text which will be saved along the experiment elements.
+        experiment_id (String): A string with the format xxxx containing an unique number to identify the experiment.
+        kfold (Integer): An integer indicating in which kfold the loop is executed.
+    """
+    with open(os.path.join(save_path, "README.txt"), "w+") as readme:
+        readme.write(helptext_template.format(
+            i = format_index(experiment_id),
+            seed = opts["seed"],
+            batch = opts["batch_size"],
+            lr = opts["lr"],
+            beta_1 = opts["beta_1"],
+            beta_2 = opts["beta_2"],
+            epochs = opts["epochs"],
+            nz = opts["nz"],
+            nc = opts["nc"],
+            ngf = opts["ngf"],
+            extra_layers = opts["extra_layers"],
+            w_gen = opts["w_gen"],
+            size = opts["isize"],
+            k = kfold
+        ))
