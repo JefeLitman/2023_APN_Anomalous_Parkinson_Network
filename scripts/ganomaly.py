@@ -1,6 +1,6 @@
 """This file contain the method that execute the selected mode to run the GANomaly model. This file contain specifically the joint of preprocessing, model modes (execution loops) and results obtained. Its important that the scripts files never import any function or method outside the mandatory method called run.
 https://arxiv.org/abs/1805.06725
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -224,6 +224,6 @@ Training process:
                 train_folds[k]
             )
         else:
-            raise AssertionError('The mode {} is not available for the Ganomaly 3D modes.'.format(mode))
+            raise AssertionError('The mode {} is not available for Ganomaly modes.'.format(mode))
 
     print("Model finished!\nEnd of the report.")
