@@ -1,21 +1,21 @@
-"""This file contains the weight initializer for different layers in GANomaly net translated to 3D in Tensorflow.
+"""This file contains the weight initializer for different layers in GANomaly model.
 https://arxiv.org/abs/1805.06725
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
 import tensorflow as tf
 
 def get_kernel_conv_init():
-    """Function that return the initializer for convolutions kernels in GANomaly model."""
+    """Function that return the initializer for convolutions kernels in GANomaly 3D model."""
     return tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 
 def get_gamma_batchNorm_init():
-    """Function that return the gamma initializer for BatchNormalization layers in GANomaly model."""
+    """Function that return the gamma initializer for BatchNormalization layers in GANomaly 3D model."""
     return tf.keras.initializers.RandomNormal(mean=1.0, stddev=0.02)
 
 def get_beta_batchNorm_init():
-    """Function that return the beta initializer for BatchNormalization layers in GANomaly model."""
+    """Function that return the beta initializer for BatchNormalization layers in GANomaly 3D model."""
     return tf.keras.initializers.Zeros()
 
 def reinit_model(model):
