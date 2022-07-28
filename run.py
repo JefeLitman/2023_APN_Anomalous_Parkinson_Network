@@ -1,5 +1,5 @@
 """This is the main file to run the differents models and experiments in this repository for Anomalous Parkinson Gait research.
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -16,6 +16,7 @@ def run():
     parsed_args = parser.parse_args()
 
     from scripts.ganomaly_3D import run as ganomaly_3D
+    from scripts.ganomaly import run as ganomaly
 
     locals()[parsed_args.model](parsed_args.mode)
 
