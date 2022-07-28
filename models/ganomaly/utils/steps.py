@@ -1,24 +1,21 @@
-"""This file contains the different steps (training and testing) for GANomaly nets in Tensorflow.
+"""This file contains the different steps (training and testing) for GANomaly model.
 https://arxiv.org/abs/1805.06725
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
 import tensorflow as tf
 from .losses import l1_loss, l2_loss, BCELoss
 
-@tf.function
-def train_step(x_data, w_gen = (1, 50, 1)):
-    """Function that make one train step for whole GANomaly model and returns the errors and 
-    relevant output variables.
-    Dependencies:
-        gen_model: A variable instance (with this name) of the generator model to be trained. (Keras Model Instance).
-        gen_opt: A variable instance (with this name) of optimizer for generator model to apply the learning process (Keras Optimizers Instance).
-        disc_model: A variable instance (with this name) of the discriminator model to be trained. (Keras Model Instance).
-        disc_opt: A variable instance (with this name) of optimizer for discriminator model to apply the learning process (Keras Optimizers Instance).
+def train_step(gen_model, gen_opt, disc_model, disc_opt, x_data, w_gen = (1, 50, 1)):
+    """Function that make one train step for whole GANomaly model and returns the errors and relevant output variables.
     Args:
-        x_data: A Tensor with the batched data to be given for the model in the step (Tensor Instance).
-        w_gen: An instance of tuple with 3 elements in the following order (w_adv, w_con, w_enc) to use in the error of generator (Tuple).
+        gen_model (tf.keras.Model): An instance of the model generator to be trained.
+        gen_opt (tf.keras.optimizers.Optimizer): An instance of keras optimizer element to be used as the generator optimizer to apply backpropagation with the gradients.
+        disc_model (tf.keras.Model): An instance of the model discriminator to be trained.
+        disc_opt (tf.keras.optimizers.Optimizer): An instance of keras optimizer element to be used as the discriminator optimizer to apply backpropagation with the gradients.
+        x_data (Tensor Instance): A Tensor with the batched data to be given for the model in the step.
+        w_gen (Tuple): An instance of tuple with 3 elements in the following order (w_adv, w_con, w_enc) to use in the error of generator.
     """
     assert len(w_gen) == 3
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
@@ -44,13 +41,12 @@ def train_step(x_data, w_gen = (1, 50, 1)):
 
     return err_g, err_d, fake, latent_i, latent_o, feat_real, feat_fake
 
-@tf.function
-def test_step(x_data):
-    """Function that make one inference step for whole GANomaly model and returns its outputs to evaluate them.
-    Dependencies:
-        gen_model: A variable instance (with this name) of the generator model to be trained. (Keras Model Instance).
+def test_step(gen_model, disc_model, x_data):
+    """Function that make one inference or eval step for whole GANomaly model and returns its outputs to evaluate them.
     Args:
-        x_data: A Tensor with the batched data to be given for the model in the step (Tensor Instance).
+        gen_model (tf.keras.Model): An instance of the model generator to be trained.
+        disc_model (tf.keras.Model): An instance of the model discriminator to be trained.
+        x_data (Tensor Instance): A Tensor with the batched data to be given for the model in the step.
     """
     fake, latent_i, latent_o = gen_model(x_data, training=False)
     pred_real, feat_real = disc_model(x_data, training=False)
