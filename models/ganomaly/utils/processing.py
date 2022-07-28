@@ -1,5 +1,6 @@
-"""This file contains the different methods to process the data for GANomaly in Tensorflow.
-Version: 1.5
+"""This file contains the different methods to process the tfrecord data for GANomaly model.
+https://arxiv.org/abs/1805.06725
+Version: 1.6
 Made by: Edgar Rangel
 """
 
@@ -33,7 +34,7 @@ def min_max_scaler(data, label, new_min, new_max, patient_id):
 def resize(data, label, size, patient_id):
     """Function that resize a 3D tensor frame by frame or 2D tensor given a specified size.
     Args:
-        data (Tensor): A Tensor with 4 or 3 dimension to be resized.
+        data (Tensor): A Tensor with 4 or 3 dimension to be resized with the format channel last.
         label (Tensor): A Tensor that contains the true label for the dataset.
         size (Tuple): A Tuple with 2 elements (height, width) respectively being the new size of the frames.
         patient_id (Tensor): A Tensor that contains the patient id of the data.
@@ -52,7 +53,7 @@ def get_center_of_volume(data, label, n_frames, patient_id):
     return data[half - n_frames//2 : half + n_frames//2], label, patient_id
 
 def oversampling_equidistant_full(data, label, n_frames, patient_id):
-    """Function that make always an oversampling of the data (video) with at least one extended sample or multiple samples extended if the data have more frames than the required.
+    """Function that make always an oversampling of the data (video) with at least one extended sample or multiple samples extended in the center if the data have more frames than the required.
     Args:
         data (Tensor): A Tensor with 4 dimension to be cropped with (frames, height, width, channels) shape.
         label (Tensor): A Tensor that contains the true label for the dataset.
@@ -94,32 +95,13 @@ def oversampling_equidistant_full(data, label, n_frames, patient_id):
     zs = tf.data.Dataset.from_tensor_slices(ids)
     return tf.data.Dataset.zip((xs, ys, zs))
 
-def undo_enumerate(i, xyi):
-    """Function that revert the enumerate method applied over a tf.data.Dataset.
-    Args:
-        i (Integer): An integer with the index of the data in the Dataset instance.
-        xyi (Tuple): A Tuple of Tensor instances that contains the data, true label and patiend id respectively.
-    """
-    return xyi[0], xyi[1], xyi[2]
-
-def move_frames_to_channels(data, label, patient_id):
-    """Function that move the frames axis to channels axis for 2D models and returns a tensor 
-    with (height, width, frames) shape.
-    Args:
-        data (Tensor): A Tensor with 3 dimensions to be rearranged.
-        label (Tensor): A Tensor that contains the true label for the dataset.
-        patient_id (Tensor): A Tensor that contains the patient id of the data.
-    """
-    return tf.transpose(data, perm=[1,2,0]), label, patient_id
-
-def rgb_to_grayscale(data, label, reduce_gray_dimension, patient_id):
-    """Function that change the data from RGB to Grayscale values in the last axis, also, removes the 
-    dimension of 1 in gray data and returns a tensor with (frames, height, width) shape.
+def rgb_to_grayscale(data, label, patient_id, reduce_gray_dimension = False):
+    """Function that change the data from RGB to Grayscale values in the last axis, also, optionally removes the dimension of 1 in gray data and returns a tensor with (frames, height, width) shape.
     Args:
         data (Tensor): A Tensor with 4 dimensions to be transposed being the last dimension of 3 (RGB).
         label (Tensor): A Tensor that contains the true label for the dataset.
-        reduce_gray_dimension (Boolean): A Boolean specifying if the channels dimensions must be reduced or deleted.
         patient_id (Tensor): A Tensor that contains the patient id of the data.
+        reduce_gray_dimension (Boolean): A Boolean specifying if the channels dimensions must be reduced or deleted, default in False.
     """
     gray_data = tf.image.rgb_to_grayscale(data)
     if reduce_gray_dimension:
@@ -128,8 +110,7 @@ def rgb_to_grayscale(data, label, reduce_gray_dimension, patient_id):
         return gray_data, label, patient_id
 
 def repeat_and_identify_frames(data, label, patient_id):
-    """This function repeat the label and patient_id the quantity of frames data contains and
-    returns them with a new attribute being the frame_id.
+    """This function repeat the label and patient_id the quantity of frames data contains and returns them with a new attribute being the frame_id.
     Args:
         data (Tensor): A Tensor with 4 dimensions to be unbatched.
         label (Tensor): A Tensor that contains the true label for the dataset.
@@ -141,12 +122,10 @@ def repeat_and_identify_frames(data, label, patient_id):
     return data, labels, ids, frames_id
 
 def add_video_id(i, xyif):
-    """Function that revert the enumerate method applied over a tf.data.Dataset but it adds the
-    parameter of video id to the data.
+    """Function that revert the enumerate method applied over a tf.data.Dataset but it adds the parameter of video id to the data.
     Args:
         i (Integer): An integer with the index of the data in the Dataset instance.
-        xyif (Tuple): A Tuple of Tensor instances that contains the data, true label, patiend id 
-        and frame id respectively.
+        xyif (Tuple): A Tuple of Tensor instances that contains the data, true label, patiend id and frame id respectively.
     """
     video_id = tf.repeat(i + 1, [tf.shape(xyif[0])[0]], axis=0)
     return xyif[0], xyif[1], xyif[2], xyif[3], video_id
