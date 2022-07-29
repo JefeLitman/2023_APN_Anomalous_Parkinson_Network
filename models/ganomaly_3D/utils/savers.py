@@ -1,5 +1,5 @@
 """This file contains methods to save elements for GANomaly 3D model.
-Version: 1.3
+Version: 1.3.1
 Made by: Edgar Rangel
 """
 
@@ -120,7 +120,7 @@ def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fak
         clean_old (Boolean): Select True if you want to delete all the content in outputs folder or False otherwise.
     """
     if clean_old:
-        for path in outputs_path:
+        for path in outputs_path[7:10]:
             os.system("rm -rf {}".format(os.path.join(path, "*")))
 
     save_latent_vectors(tf.squeeze(latent_i).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[0], training)
