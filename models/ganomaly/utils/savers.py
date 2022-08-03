@@ -1,6 +1,6 @@
 """This file contains methods to save elements for GANomaly model.
 https://arxiv.org/abs/1805.06725
-Version: 1.2.1
+Version: 1.3
 Made by: Edgar Rangel
 """
 
@@ -142,9 +142,11 @@ def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fak
         training (Boolean): Select True if the videos comes from the train data or False otherwise.
         clean_old (Boolean): Select True if you want to delete all the content in outputs folder or False otherwise.
     """
-    if clean_old:
+    if clean_old: # This will delete the older npy of erros while the videos and vectors will be overwritten
         for path in outputs_path[7:10]:
-            os.system("rm -rf {}".format(os.path.join(path, "*")))
+            paths = get_train_test_paths(path, training)
+            for p in paths:
+                os.system("rm {}".format(p + ".npy"))
 
     save_latent_vectors(tf.squeeze(latent_i).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), xyi[4].numpy(), outputs_path[0], training)
     save_latent_vectors(tf.squeeze(latent_o).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), xyi[4].numpy(), outputs_path[1], training)
