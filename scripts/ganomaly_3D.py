@@ -1,5 +1,5 @@
 """This file contain the method that execute the selected mode to run the GANomaly 3D model. This file contain specifically the joint of preprocessing, model modes (execution loops) and results obtained. Its important that the scripts files never import any function or method outside the mandatory method called run.
-Version: 1.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
@@ -23,6 +23,7 @@ def run(mode):
     from sklearn.model_selection import KFold
 
     from datasets.gait_v2.extraction_methods import get_data
+    from models.ganomaly_3D.modes.eval import exec_loop as test
     from models.ganomaly_3D.modes.train import exec_loop as train
     from models.ganomaly_3D.modes.train_eval import exec_loop as train_eval
     from models.ganomaly_3D.data_preprocessing import preprocess_gait_dataset
@@ -182,6 +183,17 @@ def run(mode):
                 gen_loss,
                 disc_loss,
                 train_folds[k]
+            )
+        elif mode == "eval":
+            test(
+                opts,
+                TP,
+                TN,
+                FP,
+                FN,
+                AUC,
+                train_folds[k],
+                test_folds[k]
             )
         else:
             raise AssertionError('The mode {} is not available for the Ganomaly 3D modes.'.format(mode))
