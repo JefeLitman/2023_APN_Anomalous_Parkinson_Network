@@ -1,5 +1,5 @@
 """This file contain the method that execute the selected mode to run the GANomaly 3D model. This file contain specifically the joint of preprocessing, model modes (execution loops) and results obtained. Its important that the scripts files never import any function or method outside the mandatory method called run.
-Version: 1.3
+Version: 1.4
 Made by: Edgar Rangel
 """
 
@@ -20,9 +20,9 @@ def run(mode):
     print("GPU selected was {}\nLoading libraries and methods...".format(opts["gpus"]))
     import numpy as np
     import tensorflow as tf
-    from sklearn.model_selection import KFold
 
     from datasets.gait_v2.extraction_methods import get_data
+    from models.ganomaly_3D.utils.splits import split_patients
     from models.ganomaly_3D.modes.eval import exec_loop as test
     from models.ganomaly_3D.modes.train import exec_loop as train
     from models.ganomaly_3D.modes.train_eval import exec_loop as train_eval
@@ -86,63 +86,9 @@ def run(mode):
     readme_template = opts['readme']
 
     print("Template loaded!\nCalculating the kfolds for the experiments...")
-    kfolds = opts["kfolds"]
-    seed = opts["seed"]
 
     print("Total kfolds to be used: {}\nSeed used to calculate the kfolds: {}".format(opts["kfolds"], opts["seed"]))
-    # Data partition for train and test with kfold
-    kf = KFold(n_splits=kfolds, shuffle=True, random_state=seed)
-    train_folds = []
-    test_folds = []
-    test_totals = [0] * kfolds
-    for k, (train_indexes, test_indexes) in enumerate(kf.split(normal_patients)):
-        data = normal_patients[train_indexes[0]]
-        total_samples = videos_4_pat[normal_patients_ids[train_indexes[0]]]
-        for i in range(1, len(train_indexes)):
-            data = data.concatenate(normal_patients[train_indexes[i]])
-            total_samples += videos_4_pat[normal_patients_ids[train_indexes[i]]]
-        train_folds.append(
-            data.shuffle(
-                total_samples, 
-                reshuffle_each_iteration=True
-            ).batch(
-                opts['batch_size']
-            ).prefetch(-1)
-        )
-            
-        data = normal_patients[test_indexes[0]]
-        test_totals[k] += videos_4_pat[normal_patients_ids[test_indexes[0]]]
-        for i in range(1, len(test_indexes)):
-            data = data.concatenate(normal_patients[test_indexes[i]])
-            test_totals[k] += videos_4_pat[normal_patients_ids[test_indexes[i]]]
-        test_folds.append(data)
-
-        print("Kfold {}\n\tNormal train ids: {}\n\tNormal test ids: {}".format(
-            k + 1,
-            [normal_patients_ids[i] for i in train_indexes],
-            [normal_patients_ids[i] for i in test_indexes]
-        ))
-    
-    for k , (_, test_indexes) in enumerate(kf.split(abnormal_patients)):
-        data = abnormal_patients[test_indexes[0]]
-        test_totals[k] += videos_4_pat[abnormal_patients_ids[test_indexes[0]]]
-        for i in range(1, len(test_indexes)):
-            data = data.concatenate(abnormal_patients[test_indexes[i]])
-            test_totals[k] += videos_4_pat[abnormal_patients_ids[test_indexes[i]]]
-        test_folds[k] = test_folds[k].concatenate(
-            data
-        ).shuffle(
-            test_totals[k], 
-            reshuffle_each_iteration=True
-        ).batch(
-            opts['batch_size']
-        ).prefetch(-1)
-
-        print("Kfold {}\n\tAbnormal test ids: {}".format(
-            k + 1,
-            [abnormal_patients_ids[i] for i in test_indexes]
-        ))
-        
+    train_folds, val_folds, test_folds = split_patients(opts, videos_4_pat, normal_patients, normal_patients_ids, abnormal_patients, abnormal_patients_ids)
 
     print("Kfolds calculated!\nCreating metrics for the model...")
     TP = get_true_positives()
@@ -168,6 +114,7 @@ def run(mode):
                 gen_loss,
                 disc_loss,
                 train_folds[k],
+                val_folds[k],
                 test_folds[k]
             )
         elif mode == "train":
@@ -193,6 +140,7 @@ def run(mode):
                 FN,
                 AUC,
                 train_folds[k],
+                val_folds[k],
                 test_folds[k]
             )
         else:
