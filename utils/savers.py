@@ -1,5 +1,5 @@
 """This file contains methods to save videos, latent vectors and errors for all models.
-Version: 1.3
+Version: 1.4
 Made by: Edgar Rangel
 """
 
@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
-from .common import format_index, get_train_test_paths
+from .common import format_index, get_partitions_paths
 
 def save_frame(frame, frame_index, folder_path):
     """Function that save a frame in the folder path given.
@@ -51,17 +51,17 @@ def save_latent_vector(embedding_vector, folder_path, filename):
     assert embedding_vector.ndim == 1
     np.save(os.path.join(folder_path, filename), embedding_vector)
 
-def save_errors(batch_errors, batch_labels, folder_path, training):
+def save_errors(batch_errors, batch_labels, folder_path, partition):
     """Function to save the batch of errors in the given folder path for train or test data, subdividing the normal and abnormal samples on different files.
     Args:
         batch_errors (Array): A 1D array with 1 dimension (shape of [batch]) with the errors to be saved.
         batch_labels (Array): A 1D array with shape with the labels of videos.
         folder_path (String): The root path where the errors will be saved.
-        training (Boolean): Select True if the videos comes from the train data or False otherwise.
+        partition (String): The partition to save the results, the available options are "train", "val" or "test".
     """
     assert batch_labels.shape[0] == batch_errors.shape[0]
 
-    normal_path, abnormal_path = get_train_test_paths(folder_path, training)
+    normal_path, abnormal_path = get_partitions_paths(folder_path, partition)
 
     if os.path.isfile(normal_path+".npy"):
         normal_errors = np.load(normal_path+".npy")
