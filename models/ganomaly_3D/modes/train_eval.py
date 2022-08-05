@@ -1,5 +1,5 @@
 """This file contains the loop for train and eval mode for GANomaly 3D model.
-Version: 1.4
+Version: 1.5
 Made by: Edgar Rangel
 """
 
@@ -15,7 +15,7 @@ from ..utils.steps import train_step, test_step
 from ..utils.savers import save_models, save_model_results
 from ..utils.exp_docs import experiment_folder_path, get_metrics_path, get_outputs_path, save_readme
 
-def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, train_data, test_data):
+def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_loss, train_data, val_data, test_data):
     """This function execute the loop for training and evaluation in each epoch for GANomaly 3D model. It doesn't return anything but it will be showing the results obtained in each epoch.
     Args:
         opts (Dict): Dictionary that contains all the hiperparameters for the model, generally is the import of hiperparameters.py file of the model.
@@ -29,6 +29,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
         gen_loss (tf.keras.metrics): An instance of tf.keras.metrics.Mean which will work to calculate basic metrics.
         disc_loss (tf.keras.metrics): An instance of tf.keras.metrics.Mean which will work to calculate basic metrics.
         train_data (tf.data.Dataset): An instance of tf.data.Dataset containing the train data for the model.
+        val_data (tf.data.Dataset): An instance of tf.data.Dataset containing the validation data for the model.
         test_data (tf.data.Dataset): An instance of tf.data.Dataset containing the test data for the model.
     """
     random.seed(opts["seed"])
@@ -56,6 +57,9 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
     train_metrics_csv = open(os.path.join(metric_save_path,"train.csv"), "w+")
     train_metrics_csv.write("epoch,gen_error,disc_error,accuracy,precision,recall,specificity,f1_score,auc\n")
 
+    val_metrics_csv = open(os.path.join(metric_save_path,"val.csv"), "w+")
+    val_metrics_csv.write("epoch,accuracy,precision,recall,specificity,f1_score,auc\n")
+
     test_metrics_csv = open(os.path.join(metric_save_path,"test.csv"), "w+")
     test_metrics_csv.write("epoch,accuracy,precision,recall,specificity,f1_score,auc\n")
 
@@ -70,7 +74,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
             if err_d < 1e-5 or tf.abs(err_d - disc_loss.result().numpy()) < 1e-5:
                 reinit_model(disc_model)
 
-            acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC, err_g, err_d)
+            acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC, "train", err_g, err_d)
 
             gen_loss.update_state(err_g)
             disc_loss.update_state(err_d)
@@ -78,7 +82,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
             disc_error = disc_loss.result().numpy()
 
             if epoch % opts["save_frecuency"] == 0 or epoch + 1 == opts["epochs"]:
-                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, True, step == 0)
+                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "train", step == 0)
 
         # Save train metrics
         train_metrics_csv.write("{e},{loss_g},{loss_d},{acc},{pre},{rec},{spe},{f1},{auc}\n".format(
@@ -99,23 +103,38 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
         AUC.reset_states()
         gen_loss.reset_states()
         disc_loss.reset_states()
-        
-        del xyi
-        del err_g
-        del err_d
-        del fake_images
-        del latent_i
-        del latent_o
-        del feat_real
-        del feat_fake
+
+        for step, xyi in enumerate(val_data):
+            fake_images, latent_i, latent_o, feat_real, feat_fake = test_step(gen_model, disc_model, xyi[0])
+
+            acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC, "val")
+
+            if epoch % opts["save_frecuency"] == 0 or epoch + 1 == opts["epochs"]:
+                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "val", step == 0)
+
+        # Save test metrics
+        val_metrics_csv.write("{e},{acc},{pre},{rec},{spe},{f1},{auc}\n".format(
+            e = epoch,
+            acc = acc,
+            pre = pre,
+            rec = rec,
+            spe = spe,
+            f1 = f1,
+            auc = auc
+        ))
+        TP.reset_states()
+        TN.reset_states()
+        FP.reset_states()
+        FN.reset_states()
+        AUC.reset_states()
 
         for step, xyi in enumerate(test_data):
             fake_images, latent_i, latent_o, feat_real, feat_fake = test_step(gen_model, disc_model, xyi[0])
 
-            acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC)
+            acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC, "test")
 
             if epoch % opts["save_frecuency"] == 0 or epoch + 1 == opts["epochs"]:
-                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, False, step == 0)
+                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "test", step == 0)
 
         # Save test metrics
         test_metrics_csv.write("{e},{acc},{pre},{rec},{spe},{f1},{auc}\n".format(
@@ -134,6 +153,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
         AUC.reset_states()
 
     train_metrics_csv.close()
+    val_metrics_csv.close()
     test_metrics_csv.close()
     
     ######################### Save final models ###############################
@@ -143,6 +163,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
     del gen_model
     del disc_model
     del train_data
+    del val_data
     del test_data
     del gen_opt
     del disc_opt
