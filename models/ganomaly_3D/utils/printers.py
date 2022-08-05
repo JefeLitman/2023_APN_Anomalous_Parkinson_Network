@@ -1,5 +1,5 @@
 """This file contains methods to print into a log file with the calculation of metrics in training and eval for GANomaly 3D model.
-Version: 1.3
+Version: 1.4
 Made by: Edgar Rangel
 """
 
@@ -8,7 +8,7 @@ from .losses import l2_loss_batch
 from .processing import min_max_scaler
 from utils.metrics import accuracy, precision, recall, specificity, f1_score
 
-def get_metrics(epoch, step, experiment_path, xyi, normal_class, latent_i, latent_o, TP, TN, FP, FN, AUC, err_g=None, err_d=None):
+def get_metrics(epoch, step, experiment_path, xyi, normal_class, latent_i, latent_o, TP, TN, FP, FN, AUC, partition, err_g=None, err_d=None):
     """This function calculate and save in the log file path the status and performance of the network while doing training or evaluation. This method return a tuple with the model metrics in the following order.
     Args:
         epoch (Integer): The epoch number.
@@ -23,9 +23,15 @@ def get_metrics(epoch, step, experiment_path, xyi, normal_class, latent_i, laten
         FP (tf.keras.metrics): An instance of tf.keras.metrics.FalsePositives which will work to calculate basic metrics.
         FN (tf.keras.metrics): An instance of tf.keras.metrics.FalseNegatives which will work to calculate basic metrics.
         AUC (tf.keras.metrics): An instance of tf.keras.metrics.AUC which will work to calculate basic metrics.
+        partition (String): The partition to save the results, the available options are "train", "val" or "test".
         err_g (Decimal): Put this parameter when the model is in training phase for generator error.
         err_d (Decimal): Put this parameter when the model is in training phase for discriminator error.
     """
+    if partition.lower() in ["train", "test", "val"]:
+        log_name = "{}.log".format(partition.lower())
+    else:
+        raise ValueError('You give an unknow partition to create the folder to contain that data. The partition given was "{}"'.format(partition))
+
     anomaly_scores = min_max_scaler(l2_loss_batch(latent_i, latent_o), -1, 0, 1, -1)[0].numpy()
 
     if normal_class == 1:
@@ -46,10 +52,8 @@ def get_metrics(epoch, step, experiment_path, xyi, normal_class, latent_i, laten
     text_to_print = "Epoch: {i} - Train Step: {j}".format(i = epoch + 1, j = step + 1)
     if err_g != None and err_d != None:
         text_to_print += "\nGenerator error: {loss_g}\nDiscriminator error: {loss_d}".format(loss_g = err_g, loss_d = err_d)
-        log_name = "train.log"
     else:
-        text_to_print = "Epoch: {i} - Test Step: {j}".format(i = epoch + 1, j = step + 1)
-        log_name = "test.log"
+        text_to_print = "Epoch: {i} - {p} Step: {j}".format(i = epoch + 1, p = partition, j = step + 1)
     text_to_print += "\nAccuracy: {acc}\nPrecision: {pre}\nRecall: {rec}\nSpecificity: {spe}\nF1_Score: {f1}\nAUC: {auc}\n {line}".format(
         acc = acc,
         pre = pre,
