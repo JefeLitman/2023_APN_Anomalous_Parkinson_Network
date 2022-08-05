@@ -1,5 +1,5 @@
 """This file contains all the hiperparameters for GANomaly 3D model. You can modify this file in order to change default values stablished here.
-Version: 1.5
+Version: 1.6
 Made by: Edgar Rangel
 """
 
@@ -12,7 +12,10 @@ def get_options():
         lr = 0.0002, # Learning rate
         dataset_path = "./datasets/gait_v2/gait_v2.tfrecord", # Absolute path where the tfrecord is located to be used
         normal_class = 1, # Class label that will be the normal data in the training process
-        kfolds = 5, # Number of kfolds in which the model will be evaluated with the tfrecord
+        kfolds = 1, # Number of kfolds in which the model will be evaluated with the tfrecord. If its 1 then train, val and test partitions will be used.
+        train_size = 0.7, # Use this attribute if you don't want to use multiple kfolds for the size of data in train.
+        val_size = 0.2, # Use this attribute if you don't want to use multiple kfolds for the size of data in val.
+        test_size = 0.1, # Use this attribute if you don't want to use multiple kfolds for the size of data in test.
         batch_size = 16, # Input batch size
         epochs = 20000, # Quantity of epochs to do in training
         seed = 8128, # Seed used to enable the replicability of the experiment
@@ -66,9 +69,11 @@ Transformations applied to data (following this order):
 
 Training process:
 - The data doesn't have train and test partition but we make the partitions like this:
-    * ~80% (11 patients) of normal (parkinson) data is used in train for kfold {k}.
-    * ~20% (3 patients) of normal (parkinson) data is used in test for kfold {k}.
-    * ~20% (3 patients) of abnormal (healthy) data are used in test for kfold {k}.
+    * ~70% (11 patients) of normal (healthy) data is used in train for kfold {k}.
+    * ~20% (3 patients) of normal (healthy) data is used in validation for kfold {k}.
+    * ~10% (2 patients) of normal (healthy) data is used in test for kfold {k}.
+    * ~20% (3 patients) of abnormal (parkinson) data is used in test for kfold {k}.
+    * ~10% (2 patients) of abnormal (parkinson) data is used in test for kfold {k}.
 """
     )
 
