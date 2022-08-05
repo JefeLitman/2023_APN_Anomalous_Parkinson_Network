@@ -1,5 +1,5 @@
 """This file contains the loop for train mode for GANomaly 3D model.
-Version: 1.3
+Version: 1.4
 Made by: Edgar Rangel
 """
 
@@ -66,7 +66,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
             if err_d < 1e-5 or tf.abs(err_d - disc_loss.result().numpy()) < 1e-5:
                 reinit_model(disc_model)
 
-            acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC, err_g, err_d)
+            acc, pre, rec, spe, f1, auc = get_metrics(epoch, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC, "train", err_g, err_d)
 
             gen_loss.update_state(err_g)
             disc_loss.update_state(err_d)
@@ -74,7 +74,7 @@ def exec_loop(opts, readme_template, kfold, TP, TN, FP, FN, AUC, gen_loss, disc_
             disc_error = disc_loss.result().numpy()
 
             if epoch % opts["save_frecuency"] == 0 or epoch + 1 == opts["epochs"]:
-                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, True, step == 0)
+                save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "train", step == 0)
 
         # Save train metrics
         train_metrics_csv.write("{e},{loss_g},{loss_d},{acc},{pre},{rec},{spe},{f1},{auc}\n".format(
