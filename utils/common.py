@@ -1,5 +1,5 @@
 """This file contains common functions used across different metrics to use with the models.
-Version: 1.0
+Version: 1.1
 Made by: Edgar Rangel
 """
 
@@ -16,16 +16,16 @@ def format_index(index, max_digits = 4):
         value = '0' + value
     return value
 
-def get_train_test_paths(base_path, training):
+def get_partitions_paths(base_path, partition):
     """Function that returns two paths for normal or abnormal data that will be saved. It take into account if the data will be saved for train or test data and create the respective folder. The first returned folder is for normal and last for abnormal.
     Args:
         base_path (String): The root path where the data will be saved.
-        training (Boolean): Select True if the videos comes from the train data or False otherwise.
+        partition (String): The partitions to create the folder, the available options are "train", "val" or "test".
     """
-    if training:
-        root_path = os.path.join(base_path, "train")
+    if partition.lower() in ["train", "test", "val"]:
+        root_path = os.path.join(base_path, partition.lower())
     else:
-        root_path = os.path.join(base_path, "test")
+        raise ValueError('You give an unknow partition to create the folder to contain that data. The partition given was "{}"'.format(partition))
 
     normal_path = os.path.join(root_path, "normal")
     abnormal_path = os.path.join(root_path, "abnormal")
