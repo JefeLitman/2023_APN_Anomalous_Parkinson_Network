@@ -1,5 +1,5 @@
 """This file contains different metrics to use with the models.
-Version: 1.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
@@ -117,25 +117,20 @@ def shapiroWilks_test(data, alpha=0.05):
     else: 
         return True 
 
-def chiSquare_test(data_experimental, data_teorical=None, alpha=0.05):
-    """Function that execute the chi Square Test. When no teorical data is given the null 
-    hypothesis is 'x comes from a chi square distribution' or when teorical data is given 
-    the null hypothesis is 'experimental data follow the teorical data frequencies or 
-    distribution' and finally returns a boolean for the null hypethesis with the statistical 
-    value of the test.
+def chiSquare_test(data_experimental, data_theorical, alpha=0.05):
+    """Function that execute the chi Square Test. In this case the theorical data is required to test the null hypothesis of 'experimental data follow the theorical data frequencies or distribution' and finally returns a boolean for the null hypothesis with the statistical value of the test. This methods is based in scipy chisquare method but its applied by hand.
     Args:
         data_experimental (Array): An 1D array of data containing the values to be tested.
         data_teorical (Array): An 1D array of data containing the expected values to be compared.
         alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
     """
-    if hasattr(data_teorical, "shape"):
-        test = stats.chisquare(data_experimental, data_teorical)
-    else:
-        test = stats.chisquare(data_experimental)
-    if test.pvalue < alpha:
-        return False, test.statistic
+    terms = (data_experimental - data_theorical)**2 / data_theorical
+    statistic = np.sum(terms)
+    p_value = stats.chi2.sf(statistic, data_theorical.shape[0] - 1, loc=np.mean(data_theorical), scale=np.std(data_theorical))
+    if p_value < alpha:
+        return False, statistic
     else: 
-        return True, test.statistic 
+        return True, statistic 
 
 def fOneWay_test(data_x, data_y, alpha=0.05):
     """Function that execute the F (Fisher) Test where the null hypothesis is 'x and y means are the same' 
