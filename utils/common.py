@@ -1,9 +1,10 @@
 """This file contains common functions used across different metrics to use with the models.
-Version: 1.1
+Version: 1.2
 Made by: Edgar Rangel
 """
 
 import os
+import numpy as np
 
 def format_index(index, max_digits = 4):
     """This function format the index integer into a string with the maximun quantity of digits given.
@@ -45,3 +46,17 @@ def get_next_last_item(base_path):
         return 1
     else:
         return elements[-1] + 1
+
+def repeat_vector_to_size(array, final_size):
+    """This function will repeat the values of the array until it have the desired size
+    Args:
+        array (np.array): 1D array to be repeated in values until it get the final_size.
+        final_size (Integer): Integer indicating how many values will have at the end.
+    """
+    vector = np.random.permutation(array)
+    original_shape = vector.shape[0]
+    max_repetitions = np.ceil(final_size / original_shape).astype(np.int64)
+    min_repetitions = final_size // original_shape
+    final_elements = final_size % original_shape
+    repeated_vector = np.concatenate([vector]*max_repetitions)[:min_repetitions*original_shape + final_elements]
+    return repeated_vector
