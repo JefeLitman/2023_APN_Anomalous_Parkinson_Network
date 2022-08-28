@@ -1,5 +1,5 @@
 """This file contains different metrics to use with the models.
-Version: 1.3
+Version: 1.4
 Made by: Edgar Rangel
 """
 
@@ -74,48 +74,54 @@ def get_AUC():
     """Function that return tf.keras.metrics Instance for AUC calculation."""
     return tf.keras.metrics.AUC(name="AUC")
 
-def dagostinoPearson_test(data, alpha=0.05):
-    """Function that execute the D'Agostino-Pearson Test for normality where the null hypothesis is 'x comes from 
-    a normal distribution' given the data and return a boolean for the null hypothesis.
+def precision_recall_curve(y_true, y_pred, num_thresholds=200):
+    """Function that calculate different precisions and recalls with thresholds contained between the min value of y_pred to the max value of y_pred.
     Args:
-        data (Array): An 1D array of data containing the values to be tested.
-        alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
+        y_true (Array): An 1D array of data containing the true values of classes.
+        y_pred (Array): An 1D array of data containing the predicted values of classes.
+        num_thresholds (Integer): How much integers will be evaluated between the range of min and max of y_pred.
     """
-    p = stats.normaltest(data).pvalue
-    if p < alpha:
-        return False
-    else: 
-        return True 
-
-def andersonDarling_test(data, alpha=0.05):
-    """Function that execute the Anderson-Darling Test for normality where the null hypothesis is 'x comes from 
-    a normal distribution' given the data and return a boolean for the null hypothesis.
-    Args:
-        data (Array): An 1D array of data containing the values to be tested.
-        alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
-    """
-    test = stats.anderson(data)
-    if alpha*100 in test.significance_level:
-        idx = np.argwhere(test.significance_level == alpha*100)[0,0]
-        if test.statistic > test.critical_values[idx]:
-            return False
+    precisions = []
+    recalls = []
+    thresholds = np.linspace(np.min(y_pred), np.max(y_pred), num_thresholds)
+    for t in thresholds:
+        tp = np.count_nonzero(np.logical_and(y_true, (y_pred > t)))
+        fp = np.count_nonzero(np.logical_and(np.logical_not(y_true), (y_pred > t)))
+        fn = np.count_nonzero(np.logical_and(y_true, (y_pred <= t)))
+        if tp+fp == 0:
+            precisions.append(0)
         else:
-            return True
-    else:
-        raise AttributeError("The alpha given is not available in the Anderson-Darling significance levels.")
+            precisions.append(precision(tp, fp))
+        if tp + fn == 0:
+            recalls.append(0)
+        else:
+            recalls.append(recall(tp, fn))
+    return np.r_[precisions], np.r_[recalls], thresholds
 
-def shapiroWilks_test(data, alpha=0.05):
-    """Function that execute the Shapiro-Wilks Test for normality where the null hypothesis is 'x comes from 
-    a normal distribution' given the data and return a boolean for the null hypothesis.
+def tpr_fpr_curve(y_true, y_pred, num_thresholds=200):
+    """Function that calculate different TPR (True Positive Rate) and FPR (False Positive Rate) with thresholds contained between the min value of y_pred to the max value of y_pred.
     Args:
-        data (Array): An 1D array of data containing the values to be tested.
-        alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
+        y_true (Array): An 1D array of data containing the true values of classes.
+        y_pred (Array): An 1D array of data containing the predicted values of classes.
+        num_thresholds (Integer): How much integers will be evaluated between the range of min and max of y_pred.
     """
-    p = stats.shapiro(data).pvalue
-    if p < alpha:
-        return False
-    else: 
-        return True 
+    tpr = []
+    fpr = []
+    thresholds = np.linspace(np.min(y_pred), np.max(y_pred), num_thresholds)
+    for t in thresholds:
+        tp = np.count_nonzero(np.logical_and(y_true, (y_pred > t)))
+        tn = np.count_nonzero(np.logical_and(np.logical_not(y_true), (y_pred <= t)))
+        fp = np.count_nonzero(np.logical_and(np.logical_not(y_true), (y_pred > t)))
+        fn = np.count_nonzero(np.logical_and(y_true, (y_pred <= t)))
+        if tp + fn == 0:
+            tpr.append(0)
+        else:
+            tpr.append(tp / (tp + fn))
+        if tn + fp == 0:
+            fpr.append(0)
+        else:
+            fpr.append(fp / (fp + tn))
+    return np.r_[tpr], np.r_[fpr], thresholds
 
 def chiSquare_test(data_experimental, data_theorical, alpha=0.05):
     """Function that execute the chi Square Test. In this case the theorical data is required to test the null hypothesis of 'experimental data follow the theorical data frequencies or distribution' and finally returns a boolean for the null hypothesis with the statistical value of the test. This methods is based in scipy chisquare method but its applied by hand.
@@ -126,31 +132,14 @@ def chiSquare_test(data_experimental, data_theorical, alpha=0.05):
     """
     terms = (data_experimental - data_theorical)**2 / data_theorical
     statistic = np.sum(terms)
-    p_value = stats.chi2.sf(statistic, data_theorical.shape[0] - 1, loc=np.mean(data_theorical), scale=np.std(data_theorical))
+    p_value = stats.chi2.sf(statistic, data_theorical.shape[0] - 1)
     if p_value < alpha:
         return False, statistic
     else: 
         return True, statistic 
 
-def fOneWay_test(data_x, data_y, alpha=0.05):
-    """Function that execute the F (Fisher) Test where the null hypothesis is 'x and y means are the same' 
-    or 'x and y comes from the same distribution' given the x and y data and return a boolean for the 
-    null hypothesis.
-    Args:
-        data_x (Array): An 1D array of data containing the values of x to be tested.
-        data_y (Array): An 1D array of data containing the values of y to be tested.
-        alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
-    """
-    p =  stats.f_oneway(data_x, data_y).pvalue
-    if p < alpha:
-        return False
-    else: 
-        return True 
-
 def brownForsythe_test(data_x, data_y, alpha=0.05):
-    """Function that execute the Brown-Forsythe Test for homoscedasticity where the null hypothesis is 
-    'x and y variances are the same' given the x and y data and return a boolean for the 
-    null hypothesis.
+    """Function that execute the Brown-Forsythe Test for homoscedasticity where the null hypothesis is 'x and y variances are the same' given the x and y data and return a boolean for the null hypothesis.
     Args:
         data_x (Array): An 1D array of data containing the values of x to be tested.
         data_y (Array): An 1D array of data containing the values of y to be tested.
@@ -163,9 +152,7 @@ def brownForsythe_test(data_x, data_y, alpha=0.05):
         return True 
 
 def levene_test(data_x, data_y, alpha=0.05):
-    """Function that execute the Levene Test for homoscedasticity where the null hypothesis is 'x and y 
-    variances are the same' given the x and y data and return a boolean for the 
-    null hypothesis.
+    """Function that execute the Levene Test for homoscedasticity where the null hypothesis is 'x and y variances are the same' given the x and y data and return a boolean for the null hypothesis.
     Args:
         data_x (Array): An 1D array of data containing the values of x to be tested.
         data_y (Array): An 1D array of data containing the values of y to be tested.
@@ -177,59 +164,90 @@ def levene_test(data_x, data_y, alpha=0.05):
     else: 
         return True 
 
-def bartlett_test(data_x, data_y, alpha=0.05):
-    """Function that execute the Barlett Test for homoscedasticity where the null hypothesis is 'x and y variances 
-    are the same' given the x and y data (both must follow a normal distribution) and return a boolean for the 
-    null hypothesis.
-    Args:
-        data_x (Array): An 1D array of data containing the values of x to be tested.
-        data_y (Array): An 1D array of data containing the values of y to be tested.
-        alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
-    """
-    p = stats.bartlett(data_x, data_y).pvalue
-    if p < alpha:
-        return False
-    else: 
-        return True 
+# def brownForsythe_test(*samples, alpha=0.05):
+#     """Function that execute the Brown-Forsythe Test for homoscedasticity where the null hypothesis is 'samples variances are the same' and return a boolean for the null hypothesis. This methods is based in scipy levene method but its applied by hand.
+#     Args:
+#         samples (Arrays): A set of 1D arrays containing the data values of x to be tested.
+#         alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
+#     """
+#     k = len(samples)
+#     Ni = np.empty(k)
+#     Yci = np.empty(k, 'd')
 
-def mannWhitney_test(data_x, data_y, alpha=0.05):
-    """Function that execute the Mann-Whitney Test where the null hypothesis is 'x and y comes from the same 
-    distribution' given the x and y data and return a boolean for the null hypothesis.
-    Args:
-        data_x (Array): An 1D array of data containing the values of x to be tested.
-        data_y (Array): An 1D array of data containing the values of y to be tested.
-        alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
-    """
-    p = stats.mannwhitneyu(data_x, data_y, alternative='two-sided').pvalue
-    if p < alpha:
-        return False
-    else: 
-        return True 
+#     for j in range(k):
+#         Ni[j] = len(samples[j])
+#         Yci[j] = np.median(samples[j])
+#     Ntot = np.sum(Ni, axis=0)
 
-def kruskalWallis_test(data_x, data_y, alpha=0.05):
-    """Function that execute the Kruskal-Wallis Test where the null hypothesis is 'x and y comes from the same 
-    distribution' given the x and y data and return a boolean for the null hypothesis.
-    Args:
-        data_x (Array): An 1D array of data containing the values of x to be tested.
-        data_y (Array): An 1D array of data containing the values of y to be tested.
-        alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
-    """
-    p = stats.kruskal(data_x, data_y).pvalue
-    if p < alpha:
-        return False
-    else: 
-        return True 
+#     # compute Zij's
+#     Zij = [None] * k
+#     for i in range(k):
+#         Zij[i] = abs(np.asarray(samples[i]) - Yci[i])
 
-def kolmogorovSmirnov_test(data_x, data_y, alpha=0.05):
-    """Function that execute the Kolmogorov-Smirnov Test where the null hypothesis is 'x and y comes from the same 
-    distribution' given the x and y data and return a boolean for the null hypothesis.
-    Args:
-        data_x (Array): An 1D array of data containing the values of x to be tested.
-        data_y (Array): An 1D array of data containing the values of y to be tested.
-        alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
-    """
-    p = stats.kstest(data_x, data_y).pvalue
-    if p < alpha:
-        return False
-    else: 
-        return True 
+#     # compute Zbari
+#     Zbari = np.empty(k, 'd')
+#     Zbar = 0.0
+#     for i in range(k):
+#         Zbari[i] = np.mean(Zij[i], axis=0)
+#         Zbar += Zbari[i] * Ni[i]
+
+#     Zbar /= Ntot
+#     numer = (Ntot - k) * np.sum(Ni * (Zbari - Zbar)**2, axis=0)
+
+#     # compute denom_variance
+#     dvar = 0.0
+#     for i in range(k):
+#         dvar += np.sum((Zij[i] - Zbari[i])**2, axis=0)
+
+#     denom = (k - 1.0) * dvar
+
+#     W = numer / denom
+#     pval = stats.f.sf(W, k-1, Ntot-k, scale=np.mean(Ni)/4)  # 1 - cdf
+#     if pval < alpha:
+#         return False
+#     else: 
+#         return True 
+
+# def levene_test(*samples, alpha=0.05):
+#     """Function that execute the Levene Test for homoscedasticity where the null hypothesis is 'samples variances are the same' and return a boolean for the null hypothesis. This methods is based in scipy levene method but its applied by hand.
+#     Args:
+#         samples (Arrays): A set of 1D arrays containing the data values of x to be tested.
+#         alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
+#     """
+#     k = len(samples)
+#     Ni = np.empty(k)
+#     Yci = np.empty(k, 'd')
+
+#     for j in range(k):
+#         Ni[j] = len(samples[j])
+#         Yci[j] = np.mean(samples[j])
+#     Ntot = np.sum(Ni, axis=0)
+
+#     # compute Zij's
+#     Zij = [None] * k
+#     for i in range(k):
+#         Zij[i] = abs(np.asarray(samples[i]) - Yci[i])
+
+#     # compute Zbari
+#     Zbari = np.empty(k, 'd')
+#     Zbar = 0.0
+#     for i in range(k):
+#         Zbari[i] = np.mean(Zij[i], axis=0)
+#         Zbar += Zbari[i] * Ni[i]
+
+#     Zbar /= Ntot
+#     numer = (Ntot - k) * np.sum(Ni * (Zbari - Zbar)**2, axis=0)
+
+#     # compute denom_variance
+#     dvar = 0.0
+#     for i in range(k):
+#         dvar += np.sum((Zij[i] - Zbari[i])**2, axis=0)
+
+#     denom = (k - 1.0) * dvar
+
+#     W = numer / denom
+#     pval = stats.f.sf(W, k-1, Ntot-k, scale=np.mean(Ni)/4)  # 1 - cdf
+#     if pval < alpha:
+#         return False
+#     else: 
+#         return True 
