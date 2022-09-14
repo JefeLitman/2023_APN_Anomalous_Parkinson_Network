@@ -1,5 +1,5 @@
 """This file contains common functions used across different metrics to use with the models.
-Version: 1.2
+Version: 1.3
 Made by: Edgar Rangel
 """
 
@@ -47,12 +47,14 @@ def get_next_last_item(base_path):
     else:
         return elements[-1] + 1
 
-def repeat_vector_to_size(array, final_size):
+def repeat_vector_to_size(array, final_size, seed):
     """This function will repeat the values of the array until it have the desired size
     Args:
         array (np.array): 1D array to be repeated in values until it get the final_size.
         final_size (Integer): Integer indicating how many values will have at the end.
+        seed (Integer): Integer to be used as seed to enable the replicability of the randomization permutation
     """
+    np.random.seed(seed)
     vector = np.random.permutation(array)
     original_shape = vector.shape[0]
     max_repetitions = np.ceil(final_size / original_shape).astype(np.int64)
