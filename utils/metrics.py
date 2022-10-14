@@ -1,11 +1,12 @@
 """This file contains different metrics to use with the models.
-Version: 1.4
+Version: 1.5
 Made by: Edgar Rangel
 """
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 from scipy import stats
+from .common import repeat_vector_to_size
 
 def get_true_positives():
     """Function that return tf.keras.metrics Instance for true positives calculation."""
@@ -123,7 +124,7 @@ def tpr_fpr_curve(y_true, y_pred, num_thresholds=200):
             fpr.append(fp / (fp + tn))
     return np.r_[tpr], np.r_[fpr], thresholds
 
-def chiSquare_test(data_experimental, data_theorical, alpha=0.05):
+def __chiSquare_test__(data_experimental, data_theorical, alpha=0.05):
     """Function that execute the chi Square Test. In this case the theorical data is required to test the null hypothesis of 'experimental data follow the theorical data frequencies or distribution' and finally returns a boolean for the null hypothesis with the statistical value of the test. This methods is based in scipy chisquare method but its applied by hand.
     Args:
         data_experimental (Array): An 1D array of data containing the values to be tested.
@@ -138,7 +139,7 @@ def chiSquare_test(data_experimental, data_theorical, alpha=0.05):
     else: 
         return True, statistic 
 
-def brownForsythe_test(data_x, data_y, alpha=0.05):
+def __brownForsythe_test__(data_x, data_y, alpha=0.05):
     """Function that execute the Brown-Forsythe Test for homoscedasticity where the null hypothesis is 'x and y variances are the same' given the x and y data and return a boolean for the null hypothesis.
     Args:
         data_x (Array): An 1D array of data containing the values of x to be tested.
@@ -151,7 +152,7 @@ def brownForsythe_test(data_x, data_y, alpha=0.05):
     else: 
         return True 
 
-def levene_test(data_x, data_y, alpha=0.05):
+def __levene_test__(data_x, data_y, alpha=0.05):
     """Function that execute the Levene Test for homoscedasticity where the null hypothesis is 'x and y variances are the same' given the x and y data and return a boolean for the null hypothesis.
     Args:
         data_x (Array): An 1D array of data containing the values of x to be tested.
@@ -164,90 +165,68 @@ def levene_test(data_x, data_y, alpha=0.05):
     else: 
         return True 
 
-# def brownForsythe_test(*samples, alpha=0.05):
-#     """Function that execute the Brown-Forsythe Test for homoscedasticity where the null hypothesis is 'samples variances are the same' and return a boolean for the null hypothesis. This methods is based in scipy levene method but its applied by hand.
-#     Args:
-#         samples (Arrays): A set of 1D arrays containing the data values of x to be tested.
-#         alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
-#     """
-#     k = len(samples)
-#     Ni = np.empty(k)
-#     Yci = np.empty(k, 'd')
+def homocedasticity_level(*classes):
+    """Function that execute the Levene and Brown-Forsythe Test for homoscedasticity for every possible pair of arrays in each class array given. It returns a value between 0 and 1 indicating how much equally in variance the data are.
+    Args:
+        classes (List[Array]): Each class parameter you give must be a List of arrays, where each element in the list is a group of the class and each value in the array is a sample for that group in that class.
+    """
+    for c in classes:
+        if not isinstance(c, list) and len(c) > 0:
+            raise AssertionError("Every parameter in the method must be a native List element of python with at least one array inside.")
+    all_samples = []
+    for i, c in enumerate(classes):
+        for group in c:
+            all_samples.append((i, group))
+    
+    homo_level = []
+    for i, group_1 in enumerate(all_samples[:-1]):
+        for group_2 in all_samples[i+1:]:
+            if group_1[0] == group_2[0]:
+                prefix = 0
+            else:
+                prefix = 1
+            data_1 = np.r_[sorted(group_1[1])]
+            data_2 = np.r_[sorted(group_2[1])]
+            homo_level += [
+                abs(prefix - int(__brownForsythe_test__(data_1, data_2))), 
+                abs(prefix - int(__levene_test__(data_1, data_2)))
+            ]
+    return np.mean(homo_level)
 
-#     for j in range(k):
-#         Ni[j] = len(samples[j])
-#         Yci[j] = np.median(samples[j])
-#     Ntot = np.sum(Ni, axis=0)
-
-#     # compute Zij's
-#     Zij = [None] * k
-#     for i in range(k):
-#         Zij[i] = abs(np.asarray(samples[i]) - Yci[i])
-
-#     # compute Zbari
-#     Zbari = np.empty(k, 'd')
-#     Zbar = 0.0
-#     for i in range(k):
-#         Zbari[i] = np.mean(Zij[i], axis=0)
-#         Zbar += Zbari[i] * Ni[i]
-
-#     Zbar /= Ntot
-#     numer = (Ntot - k) * np.sum(Ni * (Zbari - Zbar)**2, axis=0)
-
-#     # compute denom_variance
-#     dvar = 0.0
-#     for i in range(k):
-#         dvar += np.sum((Zij[i] - Zbari[i])**2, axis=0)
-
-#     denom = (k - 1.0) * dvar
-
-#     W = numer / denom
-#     pval = stats.f.sf(W, k-1, Ntot-k, scale=np.mean(Ni)/4)  # 1 - cdf
-#     if pval < alpha:
-#         return False
-#     else: 
-#         return True 
-
-# def levene_test(*samples, alpha=0.05):
-#     """Function that execute the Levene Test for homoscedasticity where the null hypothesis is 'samples variances are the same' and return a boolean for the null hypothesis. This methods is based in scipy levene method but its applied by hand.
-#     Args:
-#         samples (Arrays): A set of 1D arrays containing the data values of x to be tested.
-#         alpha (Float): A decimal value meaning the significance level, default is 0.05 for 5%.
-#     """
-#     k = len(samples)
-#     Ni = np.empty(k)
-#     Yci = np.empty(k, 'd')
-
-#     for j in range(k):
-#         Ni[j] = len(samples[j])
-#         Yci[j] = np.mean(samples[j])
-#     Ntot = np.sum(Ni, axis=0)
-
-#     # compute Zij's
-#     Zij = [None] * k
-#     for i in range(k):
-#         Zij[i] = abs(np.asarray(samples[i]) - Yci[i])
-
-#     # compute Zbari
-#     Zbari = np.empty(k, 'd')
-#     Zbar = 0.0
-#     for i in range(k):
-#         Zbari[i] = np.mean(Zij[i], axis=0)
-#         Zbar += Zbari[i] * Ni[i]
-
-#     Zbar /= Ntot
-#     numer = (Ntot - k) * np.sum(Ni * (Zbari - Zbar)**2, axis=0)
-
-#     # compute denom_variance
-#     dvar = 0.0
-#     for i in range(k):
-#         dvar += np.sum((Zij[i] - Zbari[i])**2, axis=0)
-
-#     denom = (k - 1.0) * dvar
-
-#     W = numer / denom
-#     pval = stats.f.sf(W, k-1, Ntot-k, scale=np.mean(Ni)/4)  # 1 - cdf
-#     if pval < alpha:
-#         return False
-#     else: 
-#         return True 
+def shapeness_level(*classes, seed):
+    """Function that execute the ChiSquare test in both directions for shapeness or equality in distribution for every possible pair of arrays in each class array given. It returns a value between 0 and 1 indicating how much equally in distribution the data are.
+    Args:
+        classes (List[Array]): Each class parameter you give must be a List of arrays, where each element in the list is a group of the class and each value in the array is a sample for that group in that class.
+        seed (Integer): Integer to be used as seed to enable the replicability of the randomization permutation.
+    """
+    for c in classes:
+        if not isinstance(c, list) and len(c) > 0:
+            raise AssertionError("Every parameter in the method must be a native List element of python with at least one numpy array inside.")
+    all_samples = []
+    for i, c in enumerate(classes):
+        for group in c:
+            all_samples.append((i, group))
+    
+    class_level = []
+    for i, group_1 in enumerate(all_samples[:-1]):
+        for group_2 in all_samples[i+1:]:
+            if group_1[0] == group_2[0]:
+                prefix = 0
+            else:
+                prefix = 1
+            if group_1[1].shape[0] > group_2[1].shape[0]:
+                data_1 = np.r_[sorted(group_1[1])]
+                data_2 = np.r_[sorted(repeat_vector_to_size(group_2[1], group_1[1].shape[0], seed))]
+            elif group_1[1].shape[0] < group_2[1].shape[0]:
+                data_1 = np.r_[sorted(repeat_vector_to_size(group_1[1], group_2[1].shape[0], seed))]
+                data_2 = np.r_[sorted(group_2[1])]
+            else:
+                data_1 = np.r_[sorted(group_1[1])]
+                data_2 = np.r_[sorted(group_2[1])]
+            chi_test_1 = __chiSquare_test__(data_1, data_2)
+            chi_test_2 = __chiSquare_test__(data_2, data_1)
+            class_level += [
+                abs(prefix - int(chi_test_1[0])),
+                abs(prefix - int(chi_test_2[0]))
+            ]
+    return np.mean(class_level)
