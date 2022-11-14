@@ -1,5 +1,5 @@
 """This file contains different metrics to use with the models.
-Version: 1.5
+Version: 1.6
 Made by: Edgar Rangel
 """
 
@@ -36,7 +36,10 @@ def accuracy(tp, tn, fp, fn):
         fp (Integer): An integer specifying the quantity of false positives.
         fn (Integer): An integer specifying the quantity of false negatives.
     """
-    return (tp+tn)/(tp+tn+fp+fn)
+    if tp + tn + fp + fn == 0:
+        return 0
+    else:
+        return (tp+tn)/(tp+tn+fp+fn)
 
 def precision(tp, fp):
     """Function to calculate the precision obtained given the true positives and false positives.
@@ -44,7 +47,10 @@ def precision(tp, fp):
         tp (Integer): An integer specifying the quantity of true positives.
         fp (Integer): An integer specifying the quantity of false positives.
     """
-    return tp/(tp+fp)
+    if tp + fp == 0:
+        return 0
+    else:
+        return tp/(tp+fp)
 
 def recall(tp, fn):
     """Function to calculate the recall obtained given the true positives and false negatives.
@@ -52,7 +58,10 @@ def recall(tp, fn):
         tp (Integer): An integer specifying the quantity of true positives.
         fn (Integer): An integer specifying the quantity of false negatives.
     """
-    return tp/(tp+fn)
+    if tp + fn == 0:
+        return 0
+    else:
+        return tp/(tp+fn)
 
 def specificity(tn, fp):
     """Function to calculate the specificity obtained given the true negatives and false positives.
@@ -60,7 +69,10 @@ def specificity(tn, fp):
         tn (Integer): An integer specifying the quantity of true negatives.
         fp (Integer): An integer specifying the quantity of false positives.
     """
-    return tn/(tn+fp)
+    if tn + fp == 0:
+        return 0
+    else:
+        return tn/(tn+fp)
 
 def f1_score(tp, fp, fn):
     """Function to calculate the f1 score obtained given the true positives and false positives and negatives.
@@ -69,35 +81,14 @@ def f1_score(tp, fp, fn):
         fp (Integer): An integer specifying the quantity of false positives.
         fn (Integer): An integer specifying the quantity of false negatives.
     """
-    return 2*tp/(2*tp + fp + fn)
+    if tp + fp + fn == 0:
+        return 0
+    else:
+        return 2*tp/(2*tp + fp + fn)
 
 def get_AUC():
     """Function that return tf.keras.metrics Instance for AUC calculation."""
     return tf.keras.metrics.AUC(name="AUC")
-
-def precision_recall_curve(y_true, y_pred, num_thresholds=200):
-    """Function that calculate different precisions and recalls with thresholds contained between the min value of y_pred to the max value of y_pred.
-    Args:
-        y_true (Array): An 1D array of data containing the true values of classes.
-        y_pred (Array): An 1D array of data containing the predicted values of classes.
-        num_thresholds (Integer): How much integers will be evaluated between the range of min and max of y_pred.
-    """
-    precisions = []
-    recalls = []
-    thresholds = np.linspace(np.min(y_pred), np.max(y_pred), num_thresholds)
-    for t in thresholds:
-        tp = np.count_nonzero(np.logical_and(y_true, (y_pred > t)))
-        fp = np.count_nonzero(np.logical_and(np.logical_not(y_true), (y_pred > t)))
-        fn = np.count_nonzero(np.logical_and(y_true, (y_pred <= t)))
-        if tp+fp == 0:
-            precisions.append(0)
-        else:
-            precisions.append(precision(tp, fp))
-        if tp + fn == 0:
-            recalls.append(0)
-        else:
-            recalls.append(recall(tp, fn))
-    return np.r_[precisions], np.r_[recalls], thresholds
 
 def tpr_fpr_curve(y_true, y_pred, num_thresholds=200):
     """Function that calculate different TPR (True Positive Rate) and FPR (False Positive Rate) with thresholds contained between the min value of y_pred to the max value of y_pred.
@@ -123,6 +114,32 @@ def tpr_fpr_curve(y_true, y_pred, num_thresholds=200):
         else:
             fpr.append(fp / (fp + tn))
     return np.r_[tpr], np.r_[fpr], thresholds
+
+def all_metrics_curve(y_true, y_pred, num_thresholds=200):
+    """Function that calculate all metrics with thresholds contained between the min value of y_pred to the max value of y_pred.
+    Args:
+        y_true (Array): An 1D array of data containing the true values of classes.
+        y_pred (Array): An 1D array of data containing the predicted values of classes.
+        num_thresholds (Integer): How much integers will be evaluated between the range of min and max of y_pred.
+    """
+    accs = []
+    pres = []
+    recs = []
+    spes = []
+    f1s = []
+    thresholds = np.linspace(np.min(y_pred), np.max(y_pred), num_thresholds)
+    for t in thresholds:
+        tp = np.count_nonzero(np.logical_and(y_true, (y_pred > t)))
+        tn = np.count_nonzero(np.logical_and(np.logical_not(y_true), (y_pred <= t)))
+        fp = np.count_nonzero(np.logical_and(np.logical_not(y_true), (y_pred > t)))
+        fn = np.count_nonzero(np.logical_and(y_true, (y_pred <= t)))
+        accs.append(accuracy(tp, tn, fp, fn))
+        pres.append(precision(tp, fp))
+        recs.append(recall(tp, fn))
+        spes.append(specificity(tn, fp))
+        f1s.append(f1_score(tp, fp, fn))
+
+    return np.r_[accs], np.r_[pres], np.r_[recs], np.r_[spes], np.r_[f1s], thresholds
 
 def __chiSquare_test__(data_experimental, data_theorical, alpha=0.05):
     """Function that execute the chi Square Test. In this case the theorical data is required to test the null hypothesis of 'experimental data follow the theorical data frequencies or distribution' and finally returns a boolean for the null hypothesis with the statistical value of the test. This methods is based in scipy chisquare method but its applied by hand.
