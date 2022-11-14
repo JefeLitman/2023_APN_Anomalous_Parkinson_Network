@@ -1,5 +1,5 @@
 """This file contains methods to save elements for GANomaly 3D model.
-Version: 1.5.1
+Version: 1.6
 Made by: Edgar Rangel
 """
 
@@ -11,7 +11,7 @@ from .losses import l1_loss_batch, l2_loss_batch
 from utils.savers import save_video, save_latent_vector, save_errors
 from utils.common import format_index, get_partitions_paths, get_next_last_item
 
-def save_videos(batch_videos, batch_labels, batch_ids, batch_videos_ids, folder_path, partition):
+def save_videos(batch_videos, batch_labels, batch_ids, batch_videos_ids, folder_path, partition, normal_class):
     """Function to save the batch of videos in the given folder path for train or test data, subdividing the normal and abnormal samples on different folders.
     Args:
         batch_videos (Array): A 5D array with (b, f, h, w, c) shape where b - batch size, f - frames, h - height, w - width and c - channels of the videos to be saved.
@@ -20,6 +20,7 @@ def save_videos(batch_videos, batch_labels, batch_ids, batch_videos_ids, folder_
         batch_videos_ids (Array): A 1D array with (b) shape with the ids of videos in the batch.
         folder_path (String): The root path where the videos will be saved.
         partition (String): The partition to save the results, the available options are "train", "val" or "test".
+        normal_class (Integer): An integer indicating which class will be considered as normal.
     """
     assert batch_labels.shape[0] == batch_videos.shape[0] == batch_ids.shape[0] == batch_videos_ids.shape[0]
     if batch_videos.ndim != 5:
@@ -32,12 +33,10 @@ def save_videos(batch_videos, batch_labels, batch_ids, batch_videos_ids, folder_
         os.mkdir(abnormal_path)
 
     for i, video in enumerate(batch_videos):
-        if batch_labels[i] == 0:
+        if batch_labels[i] == normal_class:
             save_path =  normal_path
-        elif batch_labels[i] == 1:
-            save_path = abnormal_path
         else:
-            raise AssertionError('There is an unknow label in the data. Label found {}, expected to be 0 or 1'.format(batch_labels[i]))
+            save_path = abnormal_path
 
         folder = "{}_patient-{}_video-{}".format(
             format_index(get_next_last_item(save_path)),
@@ -48,7 +47,7 @@ def save_videos(batch_videos, batch_labels, batch_ids, batch_videos_ids, folder_
         os.mkdir(save_path)
         save_video(video, save_path)
 
-def save_latent_vectors(batch_latents, batch_labels, batch_ids, batch_videos_ids, folder_path, partition):
+def save_latent_vectors(batch_latents, batch_labels, batch_ids, batch_videos_ids, folder_path, partition, normal_class):
     """Function to save the batch of embeddings in the given folder path for train or test data, subdividing the normal and abnormal samples on different folders.
     Args:
         batch_latents (Array): A 2D numpy array with shape (b, z) where b = batch size and z = context vector size for the latent_vectors to be saved.
@@ -57,6 +56,7 @@ def save_latent_vectors(batch_latents, batch_labels, batch_ids, batch_videos_ids
         batch_videos_ids (Array): A 1D array with shape (b) for the ids of videos in the batch.
         folder_path (String): The root path where the videos will be saved.
         partition (String): The partition to save the results, the available options are "train", "val" or "test".
+        normal_class (Integer): An integer indicating which class will be considered as normal.
     """
     assert batch_labels.shape[0] == batch_latents.shape[0] == batch_ids.shape[0] == batch_videos_ids.shape[0]
     if batch_latents.ndim != 2:
@@ -69,12 +69,10 @@ def save_latent_vectors(batch_latents, batch_labels, batch_ids, batch_videos_ids
         os.mkdir(abnormal_path)
 
     for i, vector in enumerate(batch_latents):
-        if batch_labels[i] == 0:
+        if batch_labels[i] == normal_class:
             save_path =  normal_path
-        elif batch_labels[i] == 1:
-            save_path = abnormal_path
         else:
-            raise AssertionError('There is an unknow label in the data. Label found {}, expected to be 0 or 1'.format(batch_labels[i]))
+            save_path = abnormal_path
 
         filename = "{}_patient-{}_video-{}".format(
             format_index(get_next_last_item(save_path)),
@@ -106,7 +104,7 @@ def save_models(gen_model, disc_model, experiment_path, epoch = ""):
     disc_model.save(os.path.join(experiment_path,"disc_model{}.h5".format(to_add)), 
         include_optimizer=False, save_format='h5')
 
-def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, partition, clean_old):
+def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, partition, clean_old, normal_class):
     """This function take the given args (xyi, fake_images, latent_i, latent_o, feat_real, feat_fake) and save them in the outputs paths given for their own reason. This method doesn't return anything but save all the outputs for the model.
     Args:
         xyi (Tuple[Tensor]): A tuple with (videos, labels, patient_ids, videos_ids) elements in that respective order.
@@ -118,6 +116,7 @@ def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fak
         outputs_path (List[Str]): A list with the paths in which the model stores elements such as latent vectors, errors and videos.
         partition (String): The partition to save the results, the available options are "train", "val" or "test".
         clean_old (Boolean): Select True if you want to delete all the content in outputs folder or False otherwise.
+        normal_class (Integer): An integer indicating which class will be considered as normal.
     """
     if clean_old:
         for path in outputs_path[:10]:
@@ -128,18 +127,18 @@ def save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fak
                 else:
                     os.system("rm -rf {}".format(os.path.join(p, "*")))
 
-    save_latent_vectors(tf.squeeze(latent_i).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[0], partition)
-    save_latent_vectors(tf.squeeze(latent_o).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[1], partition)
-    save_latent_vectors(tf.reshape(feat_real, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[2], partition)
-    save_latent_vectors(tf.reshape(feat_fake, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[3], partition)
+    save_latent_vectors(tf.reshape(latent_i, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[0], partition, normal_class)
+    save_latent_vectors(tf.reshape(latent_o, [xyi[0].shape[0], -1]), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[1], partition, normal_class)
+    save_latent_vectors(tf.reshape(feat_real, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[2], partition, normal_class)
+    save_latent_vectors(tf.reshape(feat_fake, [xyi[0].shape[0], -1]).numpy(), xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[3], partition, normal_class)
 
     batch_videos = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in xyi[0]]].astype(np.uint8)
-    save_videos(batch_videos, xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[4], partition)
+    save_videos(batch_videos, xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[4], partition, normal_class)
     batch_videos = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in fake_images]].astype(np.uint8)
-    save_videos(batch_videos, xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[5], partition)
+    save_videos(batch_videos, xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[5], partition, normal_class)
     batch_videos = np.r_[[min_max_scaler(i, 0, 0, 255, 0)[0].numpy() for i in tf.abs(xyi[0] - fake_images)]].astype(np.uint8)
-    save_videos(batch_videos, xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[6], partition)
+    save_videos(batch_videos, xyi[1].numpy(), xyi[2].numpy(), xyi[3].numpy(), outputs_path[6], partition, normal_class)
 
-    save_errors(l2_loss_batch(feat_real, feat_fake).numpy(), xyi[1].numpy(), outputs_path[7], partition)
-    save_errors(l1_loss_batch(xyi[0], fake_images).numpy(), xyi[1].numpy(), outputs_path[8], partition)
-    save_errors(l2_loss_batch(latent_i, latent_o).numpy(), xyi[1].numpy(), outputs_path[9], partition)
+    save_errors(l2_loss_batch(feat_real, feat_fake).numpy(), xyi[1].numpy(), outputs_path[7], partition, normal_class)
+    save_errors(l1_loss_batch(xyi[0], fake_images).numpy(), xyi[1].numpy(), outputs_path[8], partition, normal_class)
+    save_errors(l2_loss_batch(latent_i, latent_o).numpy(), xyi[1].numpy(), outputs_path[9], partition, normal_class)
