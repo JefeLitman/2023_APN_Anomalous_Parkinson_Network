@@ -1,5 +1,5 @@
 """This file contains the loop for eval mode for GANomaly 3D model.
-Version: 1.1
+Version: 1.2
 Made by: Edgar Rangel
 """
 
@@ -49,7 +49,7 @@ def exec_loop(opts, TP, TN, FP, FN, AUC, train_data, val_data, test_data):
             fake_images, latent_i, latent_o, feat_real, feat_fake = test_step(gen_model, disc_model, xyi[0])
 
             acc, pre, rec, spe, f1, auc = get_metrics(0, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC, "train")
-            save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "train", step == 0)
+            save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "train", step == 0, opts['normal_class'])
 
         TP.reset_states()
         TN.reset_states()
@@ -61,7 +61,7 @@ def exec_loop(opts, TP, TN, FP, FN, AUC, train_data, val_data, test_data):
         fake_images, latent_i, latent_o, feat_real, feat_fake = test_step(gen_model, disc_model, xyi[0])
 
         acc, pre, rec, spe, f1, auc = get_metrics(0, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC, "val")
-        save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "val", step == 0)
+        save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "val", step == 0, opts['normal_class'])
 
     TP.reset_states()
     TN.reset_states()
@@ -73,7 +73,7 @@ def exec_loop(opts, TP, TN, FP, FN, AUC, train_data, val_data, test_data):
         fake_images, latent_i, latent_o, feat_real, feat_fake = test_step(gen_model, disc_model, xyi[0])
 
         acc, pre, rec, spe, f1, auc = get_metrics(0, step, metric_save_path, xyi, opts['normal_class'], latent_i, latent_o, TP, TN, FP, FN, AUC, "test")
-        save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "test", step == 0)
+        save_model_results(xyi, fake_images, latent_i, latent_o, feat_real, feat_fake, outputs_path, "test", step == 0, opts['normal_class'])
     
     ######################### Deleting the used model ###############################
     del gen_model
