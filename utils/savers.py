@@ -1,5 +1,5 @@
 """This file contains methods to save videos, latent vectors and errors for all models.
-Version: 1.4
+Version: 1.5
 Made by: Edgar Rangel
 """
 
@@ -51,13 +51,14 @@ def save_latent_vector(embedding_vector, folder_path, filename):
     assert embedding_vector.ndim == 1
     np.save(os.path.join(folder_path, filename), embedding_vector)
 
-def save_errors(batch_errors, batch_labels, folder_path, partition):
+def save_errors(batch_errors, batch_labels, folder_path, partition, normal_class):
     """Function to save the batch of errors in the given folder path for train or test data, subdividing the normal and abnormal samples on different files.
     Args:
         batch_errors (Array): A 1D array with 1 dimension (shape of [batch]) with the errors to be saved.
         batch_labels (Array): A 1D array with shape with the labels of videos.
         folder_path (String): The root path where the errors will be saved.
         partition (String): The partition to save the results, the available options are "train", "val" or "test".
+        normal_class (Integer): An integer indicating which class will be considered as normal.
     """
     assert batch_labels.shape[0] == batch_errors.shape[0]
 
@@ -74,12 +75,10 @@ def save_errors(batch_errors, batch_labels, folder_path, partition):
         abnormal_errors = np.r_[[]]
 
     for i, label in enumerate(batch_labels):
-        if label == 0:
+        if label == normal_class:
             normal_errors = np.concatenate([normal_errors, [batch_errors[i]]])
-        elif label == 1:
-            abnormal_errors = np.concatenate([abnormal_errors, [batch_errors[i]]])
         else:
-            raise AssertionError('There is an unknow label in the data. Label found {}, expected to be 0 or 1'.format(batch_labels[i]))
+            abnormal_errors = np.concatenate([abnormal_errors, [batch_errors[i]]])
 
     if normal_errors.shape[0] != 0:
         np.save(normal_path, normal_errors)
